@@ -36,9 +36,46 @@ class FieldInfo:
     additional_keys: Optional[Dict[str, Union[str, int, float]]] = None
 
 
+# 2米温度
 t_2m_info = FieldInfo(
     name="t2m",
     parameter=Parameter(
         eccodes_short_name="2t",
     ),
+)
+
+
+# 位势高度
+hgt_info = FieldInfo(
+    name="h",
+    parameter=Parameter(
+        eccodes_short_name="gh",
+    )
+)
+
+
+# 海平面气压
+mslp_info = FieldInfo(
+    name="mslp",
+    parameter=Parameter(
+        eccodes_short_name="prmsl",
+    )
+)
+
+
+# 东西风
+u_info = FieldInfo(
+    name="u",
+    parameter=Parameter(
+        eccodes_short_name="u",
+    )
+)
+
+
+# 南北风
+v_info = FieldInfo(
+    name="v",
+    parameter=Parameter(
+        eccodes_short_name="v",
+    )
 )
