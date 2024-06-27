@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import xarray as xr
 import pandas as pd
@@ -8,8 +9,9 @@ import matplotlib.colors as mcolors
 
 from cedarkit.maps.style import ContourStyle
 from cedarkit.maps.chart import Panel
-from cedarkit.maps.domains import EastAsiaMapTemplate
+from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
+from cedarkit.maps.util import AreaRange
 
 
 @dataclass
@@ -22,9 +24,25 @@ class PlotMetadata:
     start_time: pd.Timestamp
     forecast_time: pd.Timedelta
     system_name: str
+    area_range: Optional[AreaRange] = None
 
 
-def plot(plot_data: PlotData, plot_metadata: PlotMetadata):
+def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
+    """
+    绘制2米温度图形
+
+    Parameters
+    ----------
+    plot_data
+        绘图数据，已经过预处理，直接用来绘图
+    plot_metadata
+        绘图元信息，包括时间、系统名（、绘图区域）等
+
+    Returns
+    -------
+    Panel
+        cedarkit.maps 包的绘图板对象
+    """
     t_2m_field = plot_data.t_2m_field
 
     start_time = plot_metadata.start_time
@@ -50,7 +68,10 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata):
     )
 
     # plot
-    domain = EastAsiaMapTemplate()
+    if plot_metadata.area_range is None:
+        domain = EastAsiaMapTemplate()
+    else:
+        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
     panel = Panel(domain=domain)
     panel.plot(t_2m_field, style=t_2m_style)
 
