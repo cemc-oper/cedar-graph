@@ -79,3 +79,17 @@ v_info = FieldInfo(
         eccodes_short_name="v",
     )
 )
+
+
+# 雷达组合反射率
+cr_info = FieldInfo(
+    name="cr",
+    parameter=Parameter(
+        wgrib2_name="CR",
+        # eccodes_keys=dict(
+        #     disicpline=0,
+        #     parameterCategory=16,
+        #     parameterNumber=224,
+        # )
+    )
+)
