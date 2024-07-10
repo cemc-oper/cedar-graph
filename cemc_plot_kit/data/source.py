@@ -17,7 +17,7 @@ class DataSource(ABC):
     @abstractmethod
     def retrieve(
             self, field_info: FieldInfo, start_time: pd.Timestamp, forecast_time: pd.Timedelta
-    ) -> Optional[xr.DataArray]:
+    ) -> xr.DataArray or None:
         """
         Retrieve field from data source.
 

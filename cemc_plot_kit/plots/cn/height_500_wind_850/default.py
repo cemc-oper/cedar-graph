@@ -1,16 +1,26 @@
 from dataclasses import dataclass
 from typing import Optional
+from copy import deepcopy
 
 import xarray as xr
 import pandas as pd
 import numpy as np
-
 import matplotlib.colors as mcolors
+
+from cedarkit.comp.smooth import smth9
+from cedarkit.comp.util import apply_to_xarray_values
 
 from cedarkit.maps.style import ContourStyle, ContourLabelStyle, BarbStyle
 from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.util import AreaRange
+
+from cemc_plot_kit.data import DataLoader
+from cemc_plot_kit.data.field_info import hgt_info, u_info, v_info
+from cemc_plot_kit.logger import get_logger
+
+
+plot_logger = get_logger(__name__)
 
 
 @dataclass
@@ -27,6 +37,56 @@ class PlotMetadata:
     forecast_time: pd.Timedelta
     system_name: str
     area_range: Optional[AreaRange] = None
+
+
+def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
+    # data file -> data field
+    plot_logger.info("loading height 500hPa...")
+    hgt_500_info = deepcopy(hgt_info)
+    hgt_500_info.level_type = "pl"
+    hgt_500_info.level = 500
+    h_500_field = data_loader.load(
+        field_info=hgt_500_info,
+        start_time=start_time,
+        forecast_time=forecast_time,
+    )
+
+    plot_logger.info("loading u 850hPa...")
+    u_850_info = deepcopy(u_info)
+    u_850_info.level_type = "pl"
+    u_850_info.level = 850
+    u_850_field = data_loader.load(
+        field_info=u_850_info,
+        start_time=start_time,
+        forecast_time=forecast_time,
+    )
+
+    plot_logger.info("loading v 850hPa...")
+    v_850_info = deepcopy(v_info)
+    v_850_info.level_type = "pl"
+    v_850_info.level = 850
+    v_850_field = data_loader.load(
+        field_info=v_850_info,
+        start_time=start_time,
+        forecast_time=forecast_time,
+    )
+
+    # data field -> plot data
+    plot_logger.info("calculating...")
+    # 单位转换
+    h_500_field = h_500_field / 10.
+    # 平滑
+    h_500_field = apply_to_xarray_values(h_500_field, lambda x: smth9(x, 0.5, 0.25, False))
+    h_500_field = apply_to_xarray_values(h_500_field, lambda x: smth9(x, 0.5, 0.25, False))
+
+    wind_speed_850_field = (np.sqrt(u_850_field * u_850_field + v_850_field * v_850_field))
+
+    return PlotData(
+        hgt_500_field=h_500_field,
+        u_850_field=u_850_field,
+        v_850_field=v_850_field,
+        wind_speed_850_field=wind_speed_850_field,
+    )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:

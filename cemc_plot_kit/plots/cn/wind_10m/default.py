@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+from copy import deepcopy
 
 import xarray as xr
 import pandas as pd
@@ -11,6 +12,9 @@ from cedarkit.maps.style import ContourStyle, BarbStyle
 from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.util import AreaRange
+
+from cemc_plot_kit.data import DataLoader
+from cemc_plot_kit.data.field_info import u_info, v_info
 
 
 @dataclass
@@ -26,6 +30,40 @@ class PlotMetadata:
     forecast_time: pd.Timedelta
     system_name: str
     area_range: Optional[AreaRange] = None
+
+
+def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
+
+
+    # data file -> data field
+    u_10m_info = deepcopy(u_info)
+    u_10m_info.level_type = "heightAboveGround"
+    u_10m_info.level = 10
+    u_10m_field = data_loader.load(
+        field_info=u_10m_info,
+        start_time=start_time,
+        forecast_time=forecast_time,
+    )
+
+    v_10m_info = deepcopy(v_info)
+    v_10m_info.level_type = "heightAboveGround"
+    v_10m_info.level = 10
+    v_10m_field = data_loader.load(
+        field_info=v_10m_info,
+        start_time=start_time,
+        forecast_time=forecast_time,
+    )
+
+    # data field -> plot data
+    u_10m_field = u_10m_field * 2.5
+    v_10m_field = v_10m_field * 2.5
+    wind_speed_10m_field = (np.sqrt(u_10m_field * u_10m_field + v_10m_field * v_10m_field)) / 2.5
+
+    return PlotData(
+        u_10m_field=u_10m_field,
+        v_10m_field=v_10m_field,
+        wind_speed_10m_field=wind_speed_10m_field,
+    )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:

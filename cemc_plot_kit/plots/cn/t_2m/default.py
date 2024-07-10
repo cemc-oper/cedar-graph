@@ -13,6 +13,9 @@ from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
 from cedarkit.maps.util import AreaRange
 
+from cemc_plot_kit.data import DataLoader
+from cemc_plot_kit.data.field_info import t_2m_info
+
 
 @dataclass
 class PlotData:
@@ -25,6 +28,22 @@ class PlotMetadata:
     forecast_time: pd.Timedelta
     system_name: str
     area_range: Optional[AreaRange] = None
+
+
+def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
+    # data file -> data field
+    t_2m_field = data_loader.load(
+        field_info=t_2m_info,
+        start_time=start_time,
+        forecast_time=forecast_time,
+    )
+
+    # data field -> plot data
+    t_2m_field = t_2m_field - 273.15
+
+    return PlotData(
+        t_2m_field=t_2m_field
+    )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:

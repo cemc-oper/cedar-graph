@@ -39,7 +39,7 @@ class PlotMetadata:
 
 
 def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
-    # data file -> data field
+    # data loader -> data field
     plot_logger.info("loading height 500hPa...")
     hgt_500_info = deepcopy(hgt_info)
     hgt_500_info.level_type = "pl"

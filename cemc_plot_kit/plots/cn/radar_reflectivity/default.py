@@ -7,11 +7,17 @@ import numpy as np
 
 import matplotlib.colors as mcolors
 
+from cedarkit.comp.smooth import smth9
+from cedarkit.comp.util import apply_to_xarray_values
+
 from cedarkit.maps.style import ContourStyle
 from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
 from cedarkit.maps.util import AreaRange
+
+from cemc_plot_kit.data import DataLoader
+from cemc_plot_kit.data.field_info import cr_info
 
 
 @dataclass
@@ -25,6 +31,23 @@ class PlotMetadata:
     forecast_time: pd.Timedelta
     system_name: str
     area_range: Optional[AreaRange] = None
+
+
+def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
+    # data file -> data field
+    cr_field = data_loader.load(
+        field_info=cr_info,
+        start_time=start_time,
+        forecast_time=forecast_time
+    )
+
+    # data field -> plot data
+    cr_field = apply_to_xarray_values(cr_field, lambda x: smth9(x, 0.5, -0.25, False))
+    cr_field = apply_to_xarray_values(cr_field, lambda x: smth9(x, 0.5, -0.25, False))
+
+    return PlotData(
+        cr_field=cr_field
+    )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:

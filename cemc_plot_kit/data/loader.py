@@ -11,7 +11,9 @@ class DataLoader:
     def __init__(self, data_source: DataSource):
         self.data_source = data_source
 
-    def load(self, field_info: FieldInfo, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> Optional[xr.DataArray]:
+    def load(
+            self, field_info: FieldInfo, start_time: pd.Timestamp, forecast_time: pd.Timedelta
+    ) -> xr.DataArray or None:
         """
         Load field from data loader.
 
@@ -23,7 +25,7 @@ class DataLoader:
 
         Returns
         -------
-        Optional[xr.DataArray]
+        xr.DataArray or None
         """
         field = self.data_source.retrieve(
             field_info=field_info,
