@@ -1,11 +1,37 @@
 from pathlib import Path
 from typing import Union, Optional
+from abc import ABC, abstractmethod
 
 import xarray as xr
+import pandas as pd
 
 from reki.format.grib.eccodes import load_field_from_file
 
 from .field_info import FieldInfo
+
+
+class DataSource(ABC):
+    def __init__(self):
+        ...
+
+    @abstractmethod
+    def retrieve(
+            self, field_info: FieldInfo, start_time: pd.Timestamp, forecast_time: pd.Timedelta
+    ) -> Optional[xr.DataArray]:
+        """
+        Retrieve field from data source.
+
+        Parameters
+        ----------
+        field_info
+        start_time
+        forecast_time
+
+        Returns
+        -------
+        Optional[xr.DataArray]
+        """
+        ...
 
 
 def get_field_from_file(field_info: FieldInfo, file_path: Union[str, Path]) -> Optional[xr.DataArray]:
