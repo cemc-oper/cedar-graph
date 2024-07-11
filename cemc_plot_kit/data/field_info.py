@@ -93,3 +93,19 @@ cr_info = FieldInfo(
         # )
     )
 )
+
+
+apcp_info = FieldInfo(
+    name="apcp",
+    parameter=Parameter(
+        wgrib2_name="APCP",
+    )
+)
+
+
+asnow_info = FieldInfo(
+    name="asnow",
+    parameter=Parameter(
+        wgrib2_name="ASNOW",
+    )
+)
