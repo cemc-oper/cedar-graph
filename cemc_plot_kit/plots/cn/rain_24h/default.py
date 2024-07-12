@@ -95,7 +95,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     previous_forcast_hour_label = f"{int(previous_forecast_time/pd.Timedelta(hours=1)):03d}"
     domain.set_title(
         panel=panel,
-        graph_name=f"surface cumulated precipitation: {forcast_hour_label}-{previous_forcast_hour_label}h",
+        graph_name=f"surface cumulated precipitation: {previous_forcast_hour_label}-{forcast_hour_label}h",
         system_name=plot_metadata.system_name,
         start_time=plot_metadata.start_time,
         forecast_time=plot_metadata.forecast_time,
