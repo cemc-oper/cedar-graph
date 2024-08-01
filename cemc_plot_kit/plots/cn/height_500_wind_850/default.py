@@ -33,13 +33,13 @@ class PlotData:
 
 @dataclass
 class PlotMetadata:
-    start_time: pd.Timestamp
-    forecast_time: pd.Timedelta
-    system_name: str
+    start_time: pd.Timestamp = None
+    forecast_time: pd.Timedelta = None
+    system_name: str = None
     area_range: Optional[AreaRange] = None
 
 
-def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
+def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta, **kwargs) -> PlotData:
     # data file -> data field
     plot_logger.info("loading height 500hPa...")
     hgt_500_info = deepcopy(hgt_info)

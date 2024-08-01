@@ -22,9 +22,9 @@ class PlotData:
 
 @dataclass
 class PlotMetadata:
-    start_time: pd.Timestamp
-    forecast_time: pd.Timedelta
-    system_name: str
+    start_time: pd.Timestamp = None
+    forecast_time: pd.Timedelta = None
+    system_name: str = None
     area_range: Optional[AreaRange] = None
 
 
