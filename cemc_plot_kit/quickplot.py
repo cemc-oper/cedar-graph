@@ -38,8 +38,8 @@ def show_plot(plot_type: str, plot_settings: dict):
 
     load_data_func = plot_module.load_data
     plot_data = load(
-        load_data_func=load_data_func,
         metadata=metadata,
+        load_data_func=load_data_func,
         create_data_source_func=create_data_source,
     )
 
@@ -56,7 +56,7 @@ def show_plot(plot_type: str, plot_settings: dict):
     panel.show()
 
 
-def load(load_data_func, metadata, create_data_source_func: Callable):
+def load(metadata, load_data_func: Callable, create_data_source_func: Callable):
     # system -> data file
     data_source = create_data_source_func(metadata=metadata)
     data_loader = DataLoader(data_source=data_source)
