@@ -109,3 +109,13 @@ asnow_info = FieldInfo(
         wgrib2_name="ASNOW",
     )
 )
+
+
+# 散度
+div_info = FieldInfo(
+    name="div",
+    parameter=Parameter(
+        wgrib2_name="RELD"
+    )
+
+)
