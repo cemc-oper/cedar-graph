@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.maps.style import ContourStyle
+from cedarkit.maps.style import ContourStyle, BarbStyle
 from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.colormap import generate_colormap_using_ncl_colors
@@ -14,6 +14,10 @@ from cedarkit.maps.util import AreaRange
 
 from cemc_plot_kit.data import DataLoader
 from cemc_plot_kit.data.field_info import apcp_info, u_info, v_info
+from cemc_plot_kit.logger import get_logger
+
+
+plot_logger= get_logger(__name__)
 
 
 @dataclass
@@ -37,6 +41,7 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         interval: pd.Timedelta,
+        **kwargs,
 ) -> PlotData:
     wind_level = 10
     wind_level_type = "heightAboveGround"
@@ -49,17 +54,20 @@ def load_data(
     v_10m_info.level_type = wind_level_type
     v_10m_info.level = wind_level
 
+    plot_logger.debug("loading apcp for current forecast time...")
     apcp_field = data_loader.load(
         apcp_info,
         start_time=start_time,
         forecast_time=forecast_time,
     )
 
+    plot_logger.debug("loading u 10m...")
     u_10m_field = data_loader.load(
         u_10m_info,
         start_time=start_time,
         forecast_time=forecast_time,
     )
+    plot_logger.debug("loading v 10m...")
     v_10m_field = data_loader.load(
         v_10m_info,
         start_time=start_time,
@@ -68,6 +76,7 @@ def load_data(
 
     previous_forecast_time = forecast_time - interval
 
+    plot_logger.debug("loading apcp for previous forecast time...")
     previous_apcp_field = data_loader.load(
         apcp_info,
         start_time=start_time,
@@ -75,6 +84,7 @@ def load_data(
     )
 
     # raw data -> plot data
+    plot_logger.debug("calculating...")
     total_rain_field = apcp_field - previous_apcp_field
 
     return PlotData(
@@ -164,6 +174,13 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         fill=True,
     )
 
+    barb_style = BarbStyle(
+        barbcolor="black",
+        flagcolor="black",
+        linewidth=0.3,
+        # barb_increments=dict(half=2, full=4, flag=20)
+    )
+
     # plot
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
@@ -171,6 +188,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         domain = CnAreaMapTemplate(area=plot_metadata.area_range)
     panel = Panel(domain=domain)
     panel.plot(rain_field, style=rain_style)
+    panel.plot([[u_field[::50, ::50], v_field[::50, ::50]]], style=barb_style, layer=[0])
 
     previous_forecast_time = plot_metadata.forecast_time - interval
     forcast_hour_label = f"{int(plot_metadata.forecast_time/pd.Timedelta(hours=1)):03d}"
