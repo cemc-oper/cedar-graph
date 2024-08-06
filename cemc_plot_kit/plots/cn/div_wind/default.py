@@ -49,6 +49,7 @@ def load_data(
         forecast_time: pd.Timedelta,
         div_level: float,
         wind_level: float,
+        **kwargs
 ) -> PlotData:
     # data loader -> data field
     plot_logger.debug(f"loading wind {wind_level}hPa...")

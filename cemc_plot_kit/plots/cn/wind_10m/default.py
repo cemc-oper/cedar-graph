@@ -15,6 +15,10 @@ from cedarkit.maps.util import AreaRange
 
 from cemc_plot_kit.data import DataLoader
 from cemc_plot_kit.data.field_info import u_info, v_info
+from cemc_plot_kit.logger import get_logger
+
+
+plot_logger = get_logger(__name__)
 
 
 @dataclass
@@ -32,10 +36,12 @@ class PlotMetadata:
     area_range: Optional[AreaRange] = None
 
 
-def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
-
-
+def load_data(
+        data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta,
+        **kwargs
+) -> PlotData:
     # data file -> data field
+    plot_logger.debug("loading u 10m...")
     u_10m_info = deepcopy(u_info)
     u_10m_info.level_type = "heightAboveGround"
     u_10m_info.level = 10
@@ -45,6 +51,7 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
         forecast_time=forecast_time,
     )
 
+    plot_logger.debug("loading v 10m...")
     v_10m_info = deepcopy(v_info)
     v_10m_info.level_type = "heightAboveGround"
     v_10m_info.level = 10
@@ -55,6 +62,7 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
     )
 
     # data field -> plot data
+    plot_logger.debug("calculating...")
     u_10m_field = u_10m_field * 2.5
     v_10m_field = v_10m_field * 2.5
     wind_speed_10m_field = (np.sqrt(u_10m_field * u_10m_field + v_10m_field * v_10m_field)) / 2.5

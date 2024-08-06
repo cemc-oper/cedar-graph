@@ -18,6 +18,10 @@ from cedarkit.maps.util import AreaRange
 
 from cemc_plot_kit.data import DataLoader
 from cemc_plot_kit.data.field_info import cr_info
+from cemc_plot_kit.logger import get_logger
+
+
+plot_logger = get_logger(__name__)
 
 
 @dataclass
@@ -33,8 +37,12 @@ class PlotMetadata:
     area_range: Optional[AreaRange] = None
 
 
-def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
+def load_data(
+        data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta,
+        **kwargs,
+) -> PlotData:
     # data file -> data field
+    plot_logger.debug("loading cr...")
     cr_field = data_loader.load(
         field_info=cr_info,
         start_time=start_time,
@@ -42,6 +50,7 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
     )
 
     # data field -> plot data
+    plot_logger.debug("calculating...")
     cr_field = apply_to_xarray_values(cr_field, lambda x: smth9(x, 0.5, -0.25, False))
     cr_field = apply_to_xarray_values(cr_field, lambda x: smth9(x, 0.5, -0.25, False))
 

@@ -14,6 +14,10 @@ from cedarkit.maps.util import AreaRange
 
 from cemc_plot_kit.data import DataLoader
 from cemc_plot_kit.data.field_info import apcp_info, asnow_info
+from cemc_plot_kit.logger import get_logger
+
+
+plot_logger = get_logger(__name__)
 
 
 @dataclass
@@ -36,13 +40,16 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         interval: pd.Timedelta = pd.Timedelta(hours=24),
+        **kwargs,
 ) -> PlotData:
+    plot_logger.debug("loading apcp for current forecast time...")
     apcp_field = data_loader.load(
         apcp_info,
         start_time=start_time,
         forecast_time=forecast_time,
     )
 
+    plot_logger.debug("loading asnow for current forecast time...")
     asnow_field = data_loader.load(
         asnow_info,
         start_time=start_time,
@@ -51,12 +58,14 @@ def load_data(
 
     previous_forecast_time = forecast_time - interval
 
+    plot_logger.debug("loading apcp for previous forecast time...")
     previous_apcp_field = data_loader.load(
         apcp_info,
         start_time=start_time,
         forecast_time=previous_forecast_time,
     )
 
+    plot_logger.debug("loading asnow for previous forecast time...")
     previous_asnow_field = data_loader.load(
         asnow_info,
         start_time=start_time,
@@ -64,6 +73,7 @@ def load_data(
     )
 
     # raw data -> plot data
+    plot_logger.debug("calculating...")
     total_rain_field = apcp_field - previous_apcp_field
     total_snow_field = (asnow_field - previous_asnow_field) * 1000
 
@@ -73,6 +83,7 @@ def load_data(
     rain_field = xr.where(ratio < 0.25, total_rain_field, np.nan)
     rain_snow_field = xr.where(np.logical_and(ratio >= 0.25, ratio <= 0.75), total_rain_field, np.nan)
     snow_field = xr.where(ratio > 0.75, total_rain_field, np.nan)
+    plot_logger.debug("calculating...done")
 
     return PlotData(
         rain_field=rain_field,

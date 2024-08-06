@@ -13,6 +13,10 @@ from cedarkit.maps.util import AreaRange
 
 from cemc_plot_kit.data import DataLoader
 from cemc_plot_kit.data.field_info import apcp_info
+from cemc_plot_kit.logger import get_logger
+
+
+plot_logger = get_logger(__name__)
 
 
 @dataclass
@@ -33,7 +37,9 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         interval: pd.Timedelta = pd.Timedelta(hours=24),
+        **kwargs
 ) -> PlotData:
+    plot_logger.debug("loading apcp for current forecast time...")
     apcp_field = data_loader.load(
         apcp_info,
         start_time=start_time,
@@ -41,7 +47,7 @@ def load_data(
     )
 
     previous_forecast_time = forecast_time - interval
-
+    plot_logger.debug("loading apcp for current previous time...")
     previous_apcp_field = data_loader.load(
         apcp_info,
         start_time=start_time,
@@ -49,6 +55,7 @@ def load_data(
     )
 
     # raw data -> plot data
+    plot_logger.debug("calculating...")
     total_rain_field = apcp_field - previous_apcp_field
 
     return PlotData(

@@ -38,9 +38,11 @@ class PlotMetadata:
     area_range: Optional[AreaRange] = None
 
 
-def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta) -> PlotData:
+def load_data(
+        data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta, **kwargs
+) -> PlotData:
     # data loader -> data field
-    plot_logger.info("loading height 500hPa...")
+    plot_logger.debug("loading height 500hPa...")
     hgt_500_info = deepcopy(hgt_info)
     hgt_500_info.level_type = "pl"
     hgt_500_info.level = 500
@@ -50,7 +52,7 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
         forecast_time=forecast_time
     )
 
-    plot_logger.info("loading mslp...")
+    plot_logger.debug("loading mslp...")
     mslp_field = data_loader.load(
         field_info=mslp_info,
         start_time=start_time,
@@ -58,7 +60,7 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
     )
 
     # data field -> plot data
-    plot_logger.info("calculating...")
+    plot_logger.debug("calculating...")
     # 单位转换
     h_500_field = h_500_field / 10.
     # 平滑
