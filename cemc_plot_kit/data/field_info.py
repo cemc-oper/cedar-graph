@@ -45,6 +45,15 @@ t_2m_info = FieldInfo(
 )
 
 
+# 温度
+t_info = FieldInfo(
+    name="t",
+    parameter=Parameter(
+        eccodes_short_name="t",
+    )
+)
+
+
 # 位势高度
 hgt_info = FieldInfo(
     name="h",
@@ -118,4 +127,71 @@ div_info = FieldInfo(
         wgrib2_name="RELD"
     )
 
+)
+
+
+# K指数
+k_index_info = FieldInfo(
+    name="k",
+    parameter=Parameter(
+        wgrib2_name="KX",
+    )
+)
+
+
+# CIN
+cin_info = FieldInfo(
+    name="cape",
+    parameter=Parameter(
+        wgrib2_name="CIN"
+    )
+)
+
+
+# 最优抬升指数
+bpli_info = FieldInfo(
+    name="bpli",
+    parameter=Parameter(
+        wgrib2_name="BLI"
+    )
+)
+
+# CAPE
+cape_info = FieldInfo(
+    name="cape",
+    parameter=Parameter(
+        wgrib2_name="CAPE"
+    )
+)
+
+# 水汽通量散度
+qv_div_info = FieldInfo(
+    name="qv_div",
+    parameter=Parameter(
+        wgrib2_name="FRZR",
+    )
+)
+
+# 露点温度
+dew_t_info = FieldInfo(
+    name="dpt",
+    parameter=Parameter(
+        wgrib2_name="DPT",
+    )
+)
+
+# 假相当位温
+pte_info = FieldInfo(
+    name="pte",
+    parameter=Parameter(
+        wgrib2_name="EPOT",
+    )
+)
+
+# 垂直风切变
+vwsh_info = FieldInfo(
+    name="vwsh",
+    parameter=Parameter(
+        eccodes_short_name="vwsh"
+    )
 )
