@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cemc-plot-kit"
+name = "cedar-graph"
 authors = [
     {name="Wang Dapeng", email="perillaroc@gmail.com"}
 ]
@@ -35,8 +35,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "http://codingcorp.mc.met.cma/public/cedarkit/cemc-plot-kit/git/files/"
-Repository = "http://e.mc.met.cma/codingcorp/cedarkit/cemc-plot-kit.git"
+Homepage = "http://codingcorp.mc.met.cma/public/cedarkit/cedar-graph/git/files/"
+Repository = "http://e.mc.met.cma/codingcorp/cedarkit/cedar-graph.git"
 
 [project.optional-dependencies]
 test = ["pytest"]
@@ -51,4 +51,4 @@ namespaces = false
 include-package-data = true
 
 [tool.setuptools_scm]
-version_file = "cemc_plot_kit/_version.py"
+version_file = "cedar_graph/_version.py"
