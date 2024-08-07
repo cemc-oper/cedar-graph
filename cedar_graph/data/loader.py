@@ -12,7 +12,10 @@ class DataLoader:
         self.data_source = data_source
 
     def load(
-            self, field_info: FieldInfo, start_time: pd.Timestamp, forecast_time: pd.Timedelta
+            self,
+            field_info: FieldInfo,
+            start_time: pd.Timestamp,
+            forecast_time: pd.Timedelta,
     ) -> xr.DataArray or None:
         """
         Load field from data loader.

@@ -17,7 +17,34 @@ class Metadata:
     ...
 
 
-def quick_plot(plot_type: str, system_name: str, start_time, forecast_time, **kwargs):
+def quick_plot(
+        plot_type: str,
+        system_name: str,
+        start_time: pd.Timestamp,
+        forecast_time: pd.Timedelta,
+        **kwargs
+):
+    """
+    draw the plot and display it
+
+    Parameters
+    ----------
+    plot_type
+        绘图种类。默认使用 cedar_graph 绘图包，即使用 "cedar_graph.plots.{plot_type}" 模块
+    system_name
+        系统名称。默认支持的系统名称如下：
+
+        * CMA-GFS：全球模式
+        * CMA-MESO：区域模式（3KM）
+        * CMA-TYM：台风模式
+        * CMA-MESO-1KM：区域模式（1KM）
+    start_time
+        起报时间
+    forecast_time
+        预报时效
+    kwargs
+        其他需要的参数
+    """
     plot_settings = dict(
         system_name=system_name,
         start_time=start_time,
