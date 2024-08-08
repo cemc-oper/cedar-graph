@@ -105,6 +105,9 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
+    area_name = plot_metadata.area_name
+    area_range = plot_metadata.area_range
+    div_level = plot_metadata.div_level
 
     div_levels = np.arange(-50, -5 + 5, 5)
     div_colormap = get_ncl_colormap("WhBlGrYeRe", count=len(div_levels) + 1, spread_start=98, spread_end=0)
@@ -137,8 +140,10 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     # plot
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
+        graph_name = f"{area_name} {div_level}hPa Divergence ($1.0^{{-5}}s^{{-1}}$) and Wind(m/s)"
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+        graph_name = f"{div_level}hPa Divergence ($1.0^{{-5}}s^{{-1}}$) and Wind(m/s)"
 
     panel = Panel(domain=domain)
     panel.plot(div_field[::5, ::5], style=div_style)
@@ -147,7 +152,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
 
     domain.set_title(
         panel=panel,
-        graph_name=f"{plot_metadata.area_name} {plot_metadata.div_level}hPa Divergence ($1.0^{{-5}}s^{{-1}}$) and Wind(m/s)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

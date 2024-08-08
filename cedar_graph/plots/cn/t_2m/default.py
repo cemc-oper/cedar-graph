@@ -31,11 +31,14 @@ class PlotMetadata:
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
+    area_name: Optional[str] = None
     area_range: Optional[AreaRange] = None
 
 
 def load_data(
-        data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta,
+        data_loader: DataLoader,
+        start_time: pd.Timestamp,
+        forecast_time: pd.Timedelta,
         **kwargs
 ) -> PlotData:
     # data file -> data field
@@ -76,6 +79,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
+    area_range = plot_metadata.area_range
 
     # style
     color_map = get_ncl_colormap("BlAqGrYeOrReVi200")
@@ -99,7 +103,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
     panel = Panel(domain=domain)
     panel.plot(t_2m_field, style=t_2m_style)
 

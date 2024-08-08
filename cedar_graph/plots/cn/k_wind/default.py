@@ -122,8 +122,10 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     # plot
     if area_range is None:
         domain = EastAsiaMapTemplate()
+        graph_name = f"K index(shadow) {wind_level}hPa Wind(m/s)"
     else:
         domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        graph_name = f"{area_name} K index(shadow) {wind_level}hPa Wind(m/s)"
 
     panel = Panel(domain=domain)
     panel.plot(k_field[::3, ::3], style=k_style)
@@ -132,7 +134,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
 
     domain.set_title(
         panel=panel,
-        graph_name=f"{area_name} K index(shadow) {wind_level}hPa Wind(m/s)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

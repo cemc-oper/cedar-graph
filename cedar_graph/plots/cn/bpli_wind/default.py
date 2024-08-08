@@ -8,7 +8,7 @@ import xarray as xr
 
 from cedarkit.maps.style import ContourStyle, ContourLabelStyle, BarbStyle
 from cedarkit.maps.chart import Panel
-from cedarkit.maps.domains import CnAreaMapTemplate
+from cedarkit.maps.domains import CnAreaMapTemplate, EastAsiaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
 from cedarkit.maps.util import AreaRange
 
@@ -62,7 +62,7 @@ def load_data(
         forecast_time=forecast_time
     )
 
-    plot_logger.debug(f"loading u {wind_level}hPa...")
+    plot_logger.debug(f"loading v {wind_level}hPa...")
     v_level_info = deepcopy(v_info)
     v_level_info.level_type = "pl"
     v_level_info.level = wind_level
@@ -121,15 +121,21 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     )
 
     # plot
-    domain = CnAreaMapTemplate(area=area_range)
+    if plot_metadata.area_range is None:
+        domain = EastAsiaMapTemplate()
+        graph_name = f"BPLI(shadow) and {wind_level}hPa Wind(m/s)"
+    else:
+        domain = CnAreaMapTemplate(area=area_range)
+        graph_name = f"{area_name} BPLI(shadow) and {wind_level}hPa Wind(m/s)"
+
     panel = Panel(domain=domain)
     panel.plot(bpli_field[::3, ::3], style=bpli_style)
     panel.plot(bpli_field[::3, ::3], style=bpli_line_style)
-    panel.plot([[u_field[::3, ::3], v_field[::3, ::3]]], style=barb_style)
+    panel.plot([[u_field[::3, ::3], v_field[::3, ::3]]], style=barb_style, layer=[0])
 
     domain.set_title(
         panel=panel,
-        graph_name=f"{area_name} BPLI(shadow) and {wind_level}hPa Wind(m/s)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

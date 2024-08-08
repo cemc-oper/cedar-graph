@@ -8,7 +8,7 @@ import xarray as xr
 
 from cedarkit.maps.style import ContourStyle, ContourLabelStyle, BarbStyle
 from cedarkit.maps.chart import Panel
-from cedarkit.maps.domains import CnAreaMapTemplate
+from cedarkit.maps.domains import CnAreaMapTemplate, EastAsiaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
 from cedarkit.maps.util import AreaRange
 
@@ -121,7 +121,13 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     )
 
     # plot
-    domain = CnAreaMapTemplate(area=area_range)
+    if plot_metadata.area_range is None:
+        domain = EastAsiaMapTemplate()
+        graph_name = f"CAPE(J/kg) & {wind_level}hPa Wind(m/s)"
+    else:
+        domain = CnAreaMapTemplate(area=area_range)
+        graph_name = f"{area_name} CAPE(J/kg) & {wind_level}hPa Wind(m/s)"
+
     panel = Panel(domain=domain)
     panel.plot(cape_field[::2, ::2], style=cape_style)
     panel.plot(cape_field[::2, ::2], style=cape_line_style)
@@ -129,7 +135,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
 
     domain.set_title(
         panel=panel,
-        graph_name=f"{area_name} CAPE(J/kg) & {wind_level}hPa Wind(m/s)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

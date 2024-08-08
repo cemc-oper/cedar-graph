@@ -36,6 +36,7 @@ class PlotMetadata:
     forecast_time: pd.Timedelta = None
     system_name: str = None
     area_range: Optional[AreaRange] = None
+    area_name: str = None
 
 
 def load_data(
@@ -86,6 +87,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
+    area_name = plot_metadata.area_name
+    area_range = plot_metadata.area_range
 
     # style
     map_colors = np.array([
@@ -141,14 +144,17 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+
+    graph_name = "500 hPa Height(10gpm), Sea Level Pressure(hPa,shadow)"
+
     panel = Panel(domain=domain)
     panel.plot(mslp_field, style=mslp_style)
     panel.plot(h_500_field[::10, ::10], style=hgt_style)
 
     domain.set_title(
         panel=panel,
-        graph_name="500 hPa Height(10gpm), Sea Level Pressure(hPa,shadow)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

@@ -154,7 +154,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+
     panel = Panel(domain=domain)
     panel.plot(vwsh_field[::3, ::3], style=vwsh_style)
     panel.plot(vwsh_field[::3, ::3], style=vwsh_line_style)

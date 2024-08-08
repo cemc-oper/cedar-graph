@@ -33,6 +33,7 @@ class PlotMetadata:
     forecast_time: pd.Timedelta = None
     interval: pd.Timedelta = None
     system_name: str = None
+    area_name: Optional[str] = None
     area_range: Optional[AreaRange] = None
 
 
@@ -100,6 +101,11 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     v_field = plot_data.v_field
 
     interval = plot_metadata.interval
+    system_name = plot_metadata.system_name
+    start_time = plot_metadata.start_time
+    forecast_time = plot_metadata.forecast_time
+    area_range = plot_metadata.area_range
+    area_name = plot_metadata.area_name
 
     # style
     if interval == pd.Timedelta(hours=1):
@@ -185,20 +191,21 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+
     panel = Panel(domain=domain)
     panel.plot(rain_field, style=rain_style)
     panel.plot([[u_field[::50, ::50], v_field[::50, ::50]]], style=barb_style, layer=[0])
 
-    previous_forecast_time = plot_metadata.forecast_time - interval
-    forcast_hour_label = f"{int(plot_metadata.forecast_time/pd.Timedelta(hours=1)):03d}"
+    previous_forecast_time = forecast_time - interval
+    forcast_hour_label = f"{int(forecast_time/pd.Timedelta(hours=1)):03d}"
     previous_forcast_hour_label = f"{int(previous_forecast_time/pd.Timedelta(hours=1)):03d}"
     domain.set_title(
         panel=panel,
         graph_name=f"surface cumulated precipitation: {previous_forcast_hour_label}-{forcast_hour_label}h",
-        system_name=plot_metadata.system_name,
-        start_time=plot_metadata.start_time,
-        forecast_time=plot_metadata.forecast_time,
+        system_name=system_name,
+        start_time=start_time,
+        forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=rain_style)
 

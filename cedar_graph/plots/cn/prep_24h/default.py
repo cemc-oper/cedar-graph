@@ -33,6 +33,7 @@ class PlotMetadata:
     forecast_time: pd.Timedelta = None
     system_name: str = None
     area_range: Optional[AreaRange] = None
+    area_name: str = None
 
 
 def load_data(
@@ -97,6 +98,12 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     rain_snow_field = plot_data.rain_snow_field
     snow_field = plot_data.snow_field
 
+    system_name = plot_metadata.system_name
+    start_time = plot_metadata.start_time
+    forecast_time = plot_metadata.forecast_time
+    area_name = plot_metadata.area_name
+    area_range = plot_metadata.area_range
+
     # style
     # 24小时降水常用填充图样式
     rain_contour_lev = np.array([0.1, 10, 25, 50, 100, 250])
@@ -139,24 +146,25 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     )
 
     # plot
-    if plot_metadata.area_range is None:
+    if area_range is None:
         domain = EastAsiaMapTemplate()
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+
     panel = Panel(domain=domain)
     panel.plot(rain_field, style=rain_style)
     panel.plot(snow_field, style=snow_style)
     panel.plot(rain_snow_field, style=rain_snow_style)
 
-    previous_forecast_time = plot_metadata.forecast_time - pd.Timedelta(hours=24)
-    forcast_hour_label = f"{int(plot_metadata.forecast_time/pd.Timedelta(hours=1)):03d}"
+    previous_forecast_time = forecast_time - pd.Timedelta(hours=24)
+    forcast_hour_label = f"{int(forecast_time/pd.Timedelta(hours=1)):03d}"
     previous_forcast_hour_label = f"{int(previous_forecast_time/pd.Timedelta(hours=1)):03d}"
     domain.set_title(
         panel=panel,
         graph_name=f"surface cumulated precipitation: {previous_forcast_hour_label}-{forcast_hour_label}h",
-        system_name=plot_metadata.system_name,
-        start_time=plot_metadata.start_time,
-        forecast_time=plot_metadata.forecast_time,
+        system_name=system_name,
+        start_time=start_time,
+        forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=[rain_style, rain_snow_style, snow_style])
 

@@ -9,7 +9,7 @@ import matplotlib.colors as mcolors
 
 from cedarkit.maps.style import ContourStyle, ContourLabelStyle, BarbStyle
 from cedarkit.maps.chart import Panel
-from cedarkit.maps.domains import CnAreaMapTemplate
+from cedarkit.maps.domains import CnAreaMapTemplate, EastAsiaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
 from cedarkit.maps.util import AreaRange
 
@@ -119,14 +119,20 @@ def plot(
     )
 
     # plot
-    domain = CnAreaMapTemplate(area=area_range)
+    if plot_metadata.area_range is None:
+        domain = EastAsiaMapTemplate()
+        graph_name = f"CIN & {wind_level}hPa Wind(m/s)"
+    else:
+        domain = CnAreaMapTemplate(area=area_range)
+        graph_name = f"{area_name} CIN & {wind_level}hPa Wind(m/s)"
+
     panel = Panel(domain=domain)
     panel.plot(cin_field[::2, ::2], style=cin_style)
     panel.plot([[u_field[::8, ::8], v_field[::8, ::8]]], style=barb_style)
 
     domain.set_title(
         panel=panel,
-        graph_name=f"{area_name} CIN & {wind_level}hPa Wind(m/s)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

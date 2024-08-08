@@ -92,8 +92,6 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata):
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     area_name = plot_metadata.area_name
-    if area_name is None:
-        area_name = ""
     area_range = plot_metadata.area_range
     level = plot_metadata.level
 
@@ -153,8 +151,11 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata):
     # plot
     if area_range is None:
         domain = EastAsiaMapTemplate()
+        graph_name = fr"{level}hPa Temperature($^\circ$C) and Dew Temperature Diff.($^\circ$C,shadow)"
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+        graph_name = fr"{area_name} {level}hPa Temperature($^\circ$C) and Dew Temperature Diff.($^\circ$C,shadow)"
+
     panel = Panel(domain=domain)
     panel.plot(t_dew_t_diff_field[::2, ::2], style=t_dew_t_diff_style)
     panel.plot(t_dew_t_diff_field[::2, ::2], style=t_dew_t_diff_line_style)
@@ -162,7 +163,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata):
 
     domain.set_title(
         panel=panel,
-        graph_name=fr"{area_name} {level}hPa Temperature($^\circ$C) and Dew Temperature Diff.($^\circ$C,shadow)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

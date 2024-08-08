@@ -98,6 +98,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
+    area_range = plot_metadata.area_range
+    area_name = plot_metadata.area_name
 
     map_colors = np.array([
         (255, 255, 255),
@@ -152,7 +154,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+
     panel = Panel(domain=domain)
     panel.plot(wind_speed_850_field, style=wind_speed_style)
     panel.plot(h_500_field[::8, ::8], style=hgt_style)

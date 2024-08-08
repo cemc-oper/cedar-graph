@@ -34,6 +34,7 @@ class PlotMetadata:
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
+    area_name: Optional[str] = None
     area_range: Optional[AreaRange] = None
 
 
@@ -65,6 +66,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     system_name = plot_metadata.system_name
 
     cr_field = plot_data.cr_field
+    area_name = plot_metadata.area_name
+    area_range = plot_metadata.area_range
 
     map_colors = np.array([
         (255, 255, 255),
@@ -101,7 +104,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+
     panel = Panel(domain=domain)
     panel.plot(cr_field, style=cr_style)
 

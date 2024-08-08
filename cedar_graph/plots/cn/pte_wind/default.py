@@ -152,10 +152,13 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     )
 
     # plot
-    if plot_metadata.area_range is None:
+    if area_range is None:
         domain = EastAsiaMapTemplate()
+        graph_name = f"PTE {pte_levels[0]}hPa-{pte_levels[1]}hPa(K,shadow) and {wind_level}hPa Wind(m/s)"
     else:
-        domain = CnAreaMapTemplate(area=plot_metadata.area_range)
+        domain = CnAreaMapTemplate(area=area_range)
+        graph_name = f"{area_name} PTE {pte_levels[0]}hPa-{pte_levels[1]}hPa(K,shadow) and {wind_level}hPa Wind(m/s)"
+
     panel = Panel(domain=domain)
     panel.plot(pte_field[::2, ::2], style=pte_diff_style)
     panel.plot(pte_field[::2, ::2], style=pte_diff_line_style)
@@ -163,7 +166,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
 
     domain.set_title(
         panel=panel,
-        graph_name=f"{area_name} PTE {pte_levels[0]}hPa-{pte_levels[1]}hPa(K,shadow) and {wind_level}hPa Wind(m/s)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

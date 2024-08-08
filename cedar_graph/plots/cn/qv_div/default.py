@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.maps.style import ContourStyle, ContourLabelStyle, BarbStyle
+from cedarkit.maps.style import ContourStyle
 from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import CnAreaMapTemplate, EastAsiaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
@@ -28,8 +28,8 @@ class PlotMetadata:
     system_name: str = None
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
-    area_name: str = None
-    area_range: AreaRange = None
+    area_name: Optional[str] = None
+    area_range: Optional[AreaRange]  = None
     level: float = None
 
 
@@ -98,8 +98,10 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     # plot
     if area_range is None:
         domain = EastAsiaMapTemplate()
+        graph_name = f"{level}hPa Moisture Divergence(10$^{{-7}}$g/hPa cm$^{{2}}s$,shadow)"
     else:
         domain = CnAreaMapTemplate(area=area_range)
+        graph_name = f"{area_name} {level}hPa Moisture Divergence(10$^{{-7}}$g/hPa cm$^{{2}}s$,shadow)"
 
     panel = Panel(domain=domain)
     panel.plot(qv_div_field[::10, ::10], style=qv_div_style)
@@ -107,7 +109,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
 
     domain.set_title(
         panel=panel,
-        graph_name=f"{area_name} {level}hPa Moisture Divergence(10$^{{-7}}$g/hPa cm$^{{2}}s$,shadow)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,
