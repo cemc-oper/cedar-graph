@@ -14,7 +14,6 @@ plot_settings = dict(
     system_name="CMA-GFS",
     start_time="2024073000",
     forecast_time="48h",
-    interval="24h",
 )
 
 quick_plot(
@@ -34,7 +33,6 @@ plot_settings = dict(
     system_name="CMA-MESO",
     start_time="2024073000",
     forecast_time="48h",
-    interval="24h",
     area_name="NorthEast",
     area_range=AreaRange.from_tuple((108, 137, 37, 55))
 )
