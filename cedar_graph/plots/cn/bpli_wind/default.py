@@ -14,6 +14,7 @@ from cedarkit.maps.util import AreaRange
 
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import u_info, v_info, bpli_info
+from cedar_graph.data.operator import extract_area, sample_nearest
 from cedar_graph.logger import get_logger
 
 
@@ -129,9 +130,28 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         graph_name = f"{area_name} BPLI(shadow) and {wind_level}hPa Wind(m/s)"
 
     panel = Panel(domain=domain)
-    panel.plot(bpli_field[::3, ::3], style=bpli_style)
-    panel.plot(bpli_field[::3, ::3], style=bpli_line_style)
-    panel.plot([[u_field[::3, ::3], v_field[::3, ::3]]], style=barb_style, layer=[0])
+
+    plot_bpli_field = bpli_field
+    plot_u_field = u_field
+    plot_v_field = v_field
+
+    auto_extract = True
+    if auto_extract:
+        total_area = domain.total_area()
+        plot_bpli_field = extract_area(bpli_field, area=total_area)
+        plot_u_field = extract_area(u_field, area=total_area)
+        plot_v_field = extract_area(v_field, area=total_area)
+
+    auto_sample = True
+    if auto_sample:
+        longitude_step = 0.09
+        plot_bpli_field = sample_nearest(plot_bpli_field, longitude_step=longitude_step)
+        plot_u_field = sample_nearest(plot_u_field, longitude_step=longitude_step)
+        plot_v_field = sample_nearest(plot_v_field, longitude_step=longitude_step)
+
+    panel.plot(plot_bpli_field, style=bpli_style)
+    panel.plot(plot_bpli_field, style=bpli_line_style)
+    panel.plot([[plot_u_field, plot_v_field]], style=barb_style, layer=[0])
 
     domain.set_title(
         panel=panel,
