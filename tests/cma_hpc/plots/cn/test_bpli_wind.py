@@ -25,8 +25,8 @@ def default_wind_level() -> float:
 def test_cma_meso_cn(plot_name, cma_meso_system_name, last_two_day, default_wind_level, output_dir):
     system_name = cma_meso_system_name
     start_time = last_two_day
-    forecast_time = pd.to_timedelta("24h")
     wind_level = default_wind_level
+    forecast_time = pd.to_timedelta("24h")
 
     output_image_path = Path(output_dir, f"{plot_name}.{system_name}.CN.png")
 
@@ -59,10 +59,12 @@ def test_cma_meso_cn(plot_name, cma_meso_system_name, last_two_day, default_wind
 def test_cma_meso_cn_area(plot_name, cma_meso_system_name, last_two_day, cn_area_north_china, output_dir):
     system_name = cma_meso_system_name
     start_time = last_two_day
+    plot_area = cn_area_north_china
     forecast_time = pd.to_timedelta("24h")
-    area_name = cn_area_north_china.name
-    area_range = cn_area_north_china.area
-    wind_level = cn_area_north_china.level
+
+    area_name = plot_area.name
+    area_range = plot_area.area
+    wind_level = plot_area.level
 
     output_image_path = Path(output_dir, f"{plot_name}.{system_name}.{area_name}.png")
 
@@ -99,8 +101,8 @@ def test_cma_meso_cn_area(plot_name, cma_meso_system_name, last_two_day, cn_area
 def test_cma_tym_cn(plot_name, cma_tym_system_name, last_two_day, default_wind_level, output_dir):
     system_name = cma_tym_system_name
     start_time = last_two_day
-    forecast_time = pd.to_timedelta("24h")
     wind_level = default_wind_level
+    forecast_time = pd.to_timedelta("24h")
 
     output_image_path = Path(output_dir, f"{plot_name}.{system_name}.png")
 
