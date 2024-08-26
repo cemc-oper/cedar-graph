@@ -36,6 +36,7 @@ class PlotMetadata:
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
+    area_name: Optional[str] = None
     area_range: Optional[AreaRange] = None
 
 
