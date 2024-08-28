@@ -14,7 +14,7 @@ from cedarkit.maps.util import AreaRange
 
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import u_info, v_info, bpli_info
-from cedar_graph.data.operator import extract_area, sample_nearest
+from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
 
@@ -30,12 +30,16 @@ class PlotMetadata:
     area_name: str = None
     wind_level: float = None
 
+    auto_extract_area: bool = True
+    auto_sample_nearest: bool = True
+    sample_step: float = 0.09
+
 
 @dataclass
 class PlotData:
-    bpli_field: xr.DataArray
-    u_field: xr.DataArray
-    v_field: xr.DataArray
+    field_bpli: xr.DataArray
+    field_u: xr.DataArray
+    field_v: xr.DataArray
     wind_level: float
 
 
@@ -74,18 +78,14 @@ def load_data(
     )
 
     return PlotData(
-        bpli_field=bpli_field,
-        u_field=u_field,
-        v_field=v_field,
+        field_bpli=bpli_field,
+        field_u=u_field,
+        field_v=v_field,
         wind_level=wind_level,
     )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
-    bpli_field = plot_data.bpli_field
-    u_field = plot_data.u_field
-    v_field = plot_data.v_field
-
     system_name = plot_metadata.system_name
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
@@ -121,7 +121,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         # barb_increments=dict(half=2, full=4, flag=20)
     )
 
-    # plot
+    # create domain
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
         graph_name = f"BPLI(shadow) and {wind_level}hPa Wind(m/s)"
@@ -129,26 +129,16 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         domain = CnAreaMapTemplate(area=area_range)
         graph_name = f"{area_name} BPLI(shadow) and {wind_level}hPa Wind(m/s)"
 
+    # prepare data
+    total_area = domain.total_area()
+    plot_data = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
+
+    plot_bpli_field = plot_data.field_bpli
+    plot_u_field = plot_data.field_u
+    plot_v_field = plot_data.field_v
+
+    # create panel and plot
     panel = Panel(domain=domain)
-
-    plot_bpli_field = bpli_field
-    plot_u_field = u_field
-    plot_v_field = v_field
-
-    auto_extract = True
-    if auto_extract:
-        total_area = domain.total_area()
-        plot_bpli_field = extract_area(bpli_field, area=total_area)
-        plot_u_field = extract_area(u_field, area=total_area)
-        plot_v_field = extract_area(v_field, area=total_area)
-
-    auto_sample = True
-    if auto_sample:
-        longitude_step = 0.09
-        plot_bpli_field = sample_nearest(plot_bpli_field, longitude_step=longitude_step)
-        plot_u_field = sample_nearest(plot_u_field, longitude_step=longitude_step)
-        plot_v_field = sample_nearest(plot_v_field, longitude_step=longitude_step)
-
     panel.plot(plot_bpli_field, style=bpli_style)
     panel.plot(plot_bpli_field, style=bpli_line_style)
     panel.plot([[plot_u_field, plot_v_field]], style=barb_style, layer=[0])
