@@ -22,12 +22,6 @@ def default_wind_level() -> float:
     return 850
 
 
-@pytest.mark.parametrize("system_name", [
-    "CMA-MESO",
-    "CMA-TYM",
-    "CMA-GFS",
-    "CMA-MESO-1KM"
-])
 def test_cn(plot_name, system_name, last_two_day, default_wind_level, output_dir):
     start_time = last_two_day
     wind_level = default_wind_level
@@ -61,12 +55,6 @@ def test_cn(plot_name, system_name, last_two_day, default_wind_level, output_dir
     panel.save(output_image_path)
 
 
-@pytest.mark.parametrize("system_name", [
-    "CMA-MESO",
-    "CMA-TYM",
-    "CMA-GFS",
-    "CMA-MESO-1KM"
-])
 def test_cn_area(plot_name, system_name, last_two_day, cn_area_north_china, output_dir):
     start_time = last_two_day
     plot_area = cn_area_north_china
