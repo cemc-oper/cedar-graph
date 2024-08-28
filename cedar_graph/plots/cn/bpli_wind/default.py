@@ -12,6 +12,7 @@ from cedarkit.maps.domains import CnAreaMapTemplate, EastAsiaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
 from cedarkit.maps.util import AreaRange
 
+from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import u_info, v_info, bpli_info
 from cedar_graph.data.operator import prepare_data
@@ -22,17 +23,13 @@ plot_logger = get_logger(__name__)
 
 
 @dataclass
-class PlotMetadata:
+class PlotMetadata(BasePlotMetadata):
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
     area_range: Optional[AreaRange] = None
     area_name: str = None
     wind_level: float = None
-
-    auto_extract_area: bool = True
-    auto_sample_nearest: bool = True
-    sample_step: float = 0.09
 
 
 @dataclass
@@ -51,7 +48,7 @@ def load_data(
         **kwargs,
 ) -> PlotData:
     plot_logger.debug("loading bpli...")
-    bpli_field = data_loader.load(
+    field_bpli = data_loader.load(
         field_info=bpli_info,
         start_time=start_time,
         forecast_time=forecast_time,
@@ -61,7 +58,7 @@ def load_data(
     u_level_info = deepcopy(u_info)
     u_level_info.level_type = "pl"
     u_level_info.level = wind_level
-    u_field = data_loader.load(
+    field_u = data_loader.load(
         field_info=u_level_info,
         start_time=start_time,
         forecast_time=forecast_time
@@ -71,16 +68,17 @@ def load_data(
     v_level_info = deepcopy(v_info)
     v_level_info.level_type = "pl"
     v_level_info.level = wind_level
-    v_field = data_loader.load(
+    field_v = data_loader.load(
         field_info=v_level_info,
         start_time=start_time,
         forecast_time=forecast_time
     )
+    plot_logger.debug(f"loading done")
 
     return PlotData(
-        field_bpli=bpli_field,
-        field_u=u_field,
-        field_v=v_field,
+        field_bpli=field_bpli,
+        field_u=field_u,
+        field_v=field_v,
         wind_level=wind_level,
     )
 
@@ -130,18 +128,20 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         graph_name = f"{area_name} BPLI(shadow) and {wind_level}hPa Wind(m/s)"
 
     # prepare data
+    plot_logger.debug(f"preparing data...")
     total_area = domain.total_area()
     plot_data = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
 
-    plot_bpli_field = plot_data.field_bpli
-    plot_u_field = plot_data.field_u
-    plot_v_field = plot_data.field_v
+    plot_field_bpli = plot_data.field_bpli
+    plot_field_u = plot_data.field_u
+    plot_field_v = plot_data.field_v
 
     # create panel and plot
+    plot_logger.debug(f"plotting...")
     panel = Panel(domain=domain)
-    panel.plot(plot_bpli_field, style=bpli_style)
-    panel.plot(plot_bpli_field, style=bpli_line_style)
-    panel.plot([[plot_u_field, plot_v_field]], style=barb_style, layer=[0])
+    panel.plot(plot_field_bpli, style=bpli_style)
+    panel.plot(plot_field_bpli, style=bpli_line_style)
+    panel.plot([[plot_field_u, plot_field_v]], style=barb_style, layer=[0])
 
     domain.set_title(
         panel=panel,
@@ -151,5 +151,6 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=bpli_style)
+    plot_logger.debug(f"plotting...done")
 
     return panel

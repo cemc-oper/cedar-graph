@@ -7,8 +7,10 @@ import numpy as np
 
 from cedarkit.maps.util import AreaRange
 
+from cedar_graph.metadata import BasePlotMetadata
 
-def prepare_data(plot_data, plot_metadata, total_area: AreaRange):
+
+def prepare_data(plot_data, plot_metadata: BasePlotMetadata, total_area: AreaRange):
     """
     Process all fields in plot_data according setting in plot_metadata.
     Use generated fields replace those in plot_data.

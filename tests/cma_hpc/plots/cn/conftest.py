@@ -8,6 +8,11 @@ from cedarkit.maps.util import AreaRange
 
 
 @pytest.fixture
+def default_wind_level() -> float:
+    return 850
+
+
+@pytest.fixture
 def default_sample_step() -> float:
     return 1
 
@@ -28,6 +33,11 @@ def system_name(request) -> str:
 @pytest.fixture
 def component_run_base_dir(run_base_dir):
     return Path(run_base_dir, "plots/cn")
+
+
+@pytest.fixture
+def output_dir(component_run_base_dir, plot_name):
+    return Path(component_run_base_dir) / plot_name
 
 
 @dataclass

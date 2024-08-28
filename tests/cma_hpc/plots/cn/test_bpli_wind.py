@@ -12,17 +12,7 @@ def plot_name():
     return "bpli_wind"
 
 
-@pytest.fixture
-def output_dir(component_run_base_dir, plot_name):
-    return Path(component_run_base_dir) / plot_name
-
-
-@pytest.fixture
-def default_wind_level() -> float:
-    return 850
-
-
-def test_cn(plot_name, system_name, last_two_day, default_wind_level, output_dir):
+def test_cn(plot_name, system_name, last_two_day, default_wind_level, output_dir, default_sample_step):
     start_time = last_two_day
     wind_level = default_wind_level
     forecast_time = pd.to_timedelta("24h")
@@ -34,6 +24,7 @@ def test_cn(plot_name, system_name, last_two_day, default_wind_level, output_dir
         forecast_time=forecast_time,
         system_name=system_name,
         wind_level=wind_level,
+        sample_step=default_sample_step,
     )
 
     data_source = LocalDataSource(system_name=system_name)
@@ -55,7 +46,7 @@ def test_cn(plot_name, system_name, last_two_day, default_wind_level, output_dir
     panel.save(output_image_path)
 
 
-def test_cn_area(plot_name, system_name, last_two_day, cn_area_north_china, output_dir):
+def test_cn_area(plot_name, system_name, last_two_day, cn_area_north_china, output_dir, default_sample_step):
     start_time = last_two_day
     plot_area = cn_area_north_china
     forecast_time = pd.to_timedelta("24h")
@@ -73,6 +64,7 @@ def test_cn_area(plot_name, system_name, last_two_day, cn_area_north_china, outp
         area_name=area_name,
         area_range=area_range,
         wind_level=wind_level,
+        sample_step=default_sample_step,
     )
 
     data_source = LocalDataSource(system_name=system_name)
