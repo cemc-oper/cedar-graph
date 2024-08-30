@@ -15,8 +15,10 @@ from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.util import AreaRange
 
+from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import hgt_info, u_info, v_info
+from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
 
@@ -24,20 +26,20 @@ plot_logger = get_logger(__name__)
 
 
 @dataclass
-class PlotData:
-    hgt_500_field: xr.DataArray
-    u_850_field: xr.DataArray
-    v_850_field: xr.DataArray
-    wind_speed_850_field: xr.DataArray
-
-
-@dataclass
-class PlotMetadata:
+class PlotMetadata(BasePlotMetadata):
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
     area_name: Optional[str] = None
     area_range: Optional[AreaRange] = None
+
+
+@dataclass
+class PlotData:
+    field_hgt_500: xr.DataArray
+    field_u_850: xr.DataArray
+    field_v_850: xr.DataArray
+    field_wind_speed_850: xr.DataArray
 
 
 def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta, **kwargs) -> PlotData:
@@ -46,7 +48,7 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
     hgt_500_info = deepcopy(hgt_info)
     hgt_500_info.level_type = "pl"
     hgt_500_info.level = 500
-    h_500_field = data_loader.load(
+    field_h_500 = data_loader.load(
         field_info=hgt_500_info,
         start_time=start_time,
         forecast_time=forecast_time,
@@ -56,7 +58,7 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
     u_850_info = deepcopy(u_info)
     u_850_info.level_type = "pl"
     u_850_info.level = 850
-    u_850_field = data_loader.load(
+    field_u_850 = data_loader.load(
         field_info=u_850_info,
         start_time=start_time,
         forecast_time=forecast_time,
@@ -66,7 +68,7 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
     v_850_info = deepcopy(v_info)
     v_850_info.level_type = "pl"
     v_850_info.level = 850
-    v_850_field = data_loader.load(
+    field_v_850 = data_loader.load(
         field_info=v_850_info,
         start_time=start_time,
         forecast_time=forecast_time,
@@ -75,27 +77,24 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
     # data field -> plot data
     plot_logger.debug("calculating...")
     # 单位转换
-    h_500_field = h_500_field / 10.
+    field_h_500 = field_h_500 / 10.
     # 平滑
-    h_500_field = apply_to_xarray_values(h_500_field, lambda x: smth9(x, 0.5, 0.25, False))
-    h_500_field = apply_to_xarray_values(h_500_field, lambda x: smth9(x, 0.5, 0.25, False))
+    field_h_500 = apply_to_xarray_values(field_h_500, lambda x: smth9(x, 0.5, 0.25, False))
+    field_h_500 = apply_to_xarray_values(field_h_500, lambda x: smth9(x, 0.5, 0.25, False))
 
-    wind_speed_850_field = (np.sqrt(u_850_field * u_850_field + v_850_field * v_850_field))
+    wind_speed_850_field = (np.sqrt(field_u_850 * field_u_850 + field_v_850 * field_v_850))
+
+    plot_logger.debug("loading done")
 
     return PlotData(
-        hgt_500_field=h_500_field,
-        u_850_field=u_850_field,
-        v_850_field=v_850_field,
-        wind_speed_850_field=wind_speed_850_field,
+        field_hgt_500=field_h_500,
+        field_u_850=field_u_850,
+        field_v_850=field_v_850,
+        field_wind_speed_850=wind_speed_850_field,
     )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
-    h_500_field = plot_data.hgt_500_field
-    u_850_field = plot_data.u_850_field
-    v_850_field = plot_data.v_850_field
-    wind_speed_850_field = plot_data.wind_speed_850_field
-
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
@@ -151,24 +150,39 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         # barb_increments=dict(half=2, full=4, flag=20)
     )
 
-    # plot
+    # create domain
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
         domain = CnAreaMapTemplate(area=area_range)
+    graph_name = "500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)"
 
+    # prepare data
+    plot_logger.debug("preparing data...")
+    total_area = domain.total_area()
+    plot_data : PlotData = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
+
+    plot_field_wind_speed_850 = plot_data.field_wind_speed_850
+    plot_field_h_500 = plot_data.field_hgt_500
+    plot_field_u_850 = plot_data.field_u_850
+    plot_field_v_850 = plot_data.field_v_850
+
+    # plot
+    plot_logger.debug("plotting...")
     panel = Panel(domain=domain)
-    panel.plot(wind_speed_850_field, style=wind_speed_style)
-    panel.plot(h_500_field[::8, ::8], style=hgt_style)
-    panel.plot([[u_850_field[::64, ::64], v_850_field[::64, ::64]]], style=barb_style, layer=[0])
+    panel.plot(plot_field_wind_speed_850, style=wind_speed_style)
+    panel.plot(plot_field_h_500, style=hgt_style)
+    panel.plot([[plot_field_u_850, plot_field_v_850]], style=barb_style, layer=[0])
 
     domain.set_title(
         panel=panel,
-        graph_name="500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=wind_speed_style)
+
+    plot_logger.debug("plotting...done")
 
     return panel

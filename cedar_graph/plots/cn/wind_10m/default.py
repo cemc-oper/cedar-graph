@@ -13,8 +13,10 @@ from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.util import AreaRange
 
+from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import u_info, v_info
+from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
 
@@ -22,19 +24,19 @@ plot_logger = get_logger(__name__)
 
 
 @dataclass
-class PlotData:
-    u_10m_field: xr.DataArray
-    v_10m_field: xr.DataArray
-    wind_speed_10m_field: xr.DataArray
-
-
-@dataclass
-class PlotMetadata:
+class PlotMetadata(BasePlotMetadata):
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
     area_name: Optional[str] = None
     area_range: Optional[AreaRange] = None
+
+
+@dataclass
+class PlotData:
+    field_u_10m: xr.DataArray
+    field_v_10m: xr.DataArray
+    field_wind_speed_10m: xr.DataArray
 
 
 def load_data(
@@ -46,7 +48,7 @@ def load_data(
     u_10m_info = deepcopy(u_info)
     u_10m_info.level_type = "heightAboveGround"
     u_10m_info.level = 10
-    u_10m_field = data_loader.load(
+    field_u_10m = data_loader.load(
         field_info=u_10m_info,
         start_time=start_time,
         forecast_time=forecast_time,
@@ -56,7 +58,7 @@ def load_data(
     v_10m_info = deepcopy(v_info)
     v_10m_info.level_type = "heightAboveGround"
     v_10m_info.level = 10
-    v_10m_field = data_loader.load(
+    field_v_10m = data_loader.load(
         field_info=v_10m_info,
         start_time=start_time,
         forecast_time=forecast_time,
@@ -64,22 +66,20 @@ def load_data(
 
     # data field -> plot data
     plot_logger.debug("calculating...")
-    u_10m_field = u_10m_field * 2.5
-    v_10m_field = v_10m_field * 2.5
-    wind_speed_10m_field = (np.sqrt(u_10m_field * u_10m_field + v_10m_field * v_10m_field)) / 2.5
+    field_u_10m = field_u_10m * 2.5
+    field_v_10m = field_v_10m * 2.5
+    field_wind_speed_10m = (np.sqrt(field_u_10m * field_u_10m + field_v_10m * field_v_10m)) / 2.5
+
+    plot_logger.debug("loading done")
 
     return PlotData(
-        u_10m_field=u_10m_field,
-        v_10m_field=v_10m_field,
-        wind_speed_10m_field=wind_speed_10m_field,
+        field_u_10m=field_u_10m,
+        field_v_10m=field_v_10m,
+        field_wind_speed_10m=field_wind_speed_10m,
     )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
-    u_10m_field = plot_data.u_10m_field
-    v_10m_field = plot_data.v_10m_field
-    wind_speed_10m_field = plot_data.wind_speed_10m_field
-
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
@@ -120,23 +120,36 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         # barb_increments=dict(half=2, full=4, flag=20)
     )
 
-    # plot
+    # create domain
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
         domain = CnAreaMapTemplate(area=area_range)
+    graph_name = "10m Wind, 10m Wind Speed(m/s, shadow)"
 
+    # prepare data
+    plot_logger.debug("preparing data...")
+    total_area = domain.total_area()
+    plot_data : PlotData = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
+
+    plot_field_wind_speed_10m = plot_data.field_wind_speed_10m
+    plot_field_u_10m = plot_data.field_u_10m
+    plot_field_v_10m = plot_data.field_v_10m
+
+    # plot
+    plot_logger.debug("plotting...")
     panel = Panel(domain=domain)
-    panel.plot(wind_speed_10m_field, style=wind_speed_style)
-    panel.plot([[u_10m_field[::50, ::50], v_10m_field[::50, ::50]]], style=barb_style, layer=[0])
+    panel.plot(plot_field_wind_speed_10m, style=wind_speed_style)
+    panel.plot([[plot_field_u_10m, plot_field_v_10m]], style=barb_style, layer=[0])
 
     domain.set_title(
         panel=panel,
-        graph_name="10m Wind, 10m Wind Speed(m/s, shadow)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=wind_speed_style)
+    plot_logger.debug("plotting...done")
 
     return panel

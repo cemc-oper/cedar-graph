@@ -11,8 +11,10 @@ from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.colormap import generate_colormap_using_ncl_colors
 from cedarkit.maps.util import AreaRange
 
+from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import apcp_info
+from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
 
@@ -20,17 +22,18 @@ plot_logger = get_logger(__name__)
 
 
 @dataclass
-class PlotData:
-    rain_field: xr.DataArray
-
-
-@dataclass
-class PlotMetadata:
+class PlotMetadata(BasePlotMetadata):
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
+    interval: pd.Timedelta = pd.Timedelta(hours=24),
     system_name: str = None
     area_name: Optional[str] = None
     area_range: Optional[AreaRange] = None
+
+
+@dataclass
+class PlotData:
+    field_rain: xr.DataArray
 
 
 def load_data(
@@ -41,7 +44,7 @@ def load_data(
         **kwargs
 ) -> PlotData:
     plot_logger.debug("loading apcp for current forecast time...")
-    apcp_field = data_loader.load(
+    field_apcp = data_loader.load(
         apcp_info,
         start_time=start_time,
         forecast_time=forecast_time,
@@ -49,7 +52,7 @@ def load_data(
 
     previous_forecast_time = forecast_time - interval
     plot_logger.debug("loading apcp for current previous time...")
-    previous_apcp_field = data_loader.load(
+    previous_field_apcp = data_loader.load(
         apcp_info,
         start_time=start_time,
         forecast_time=previous_forecast_time,
@@ -57,16 +60,16 @@ def load_data(
 
     # raw data -> plot data
     plot_logger.debug("calculating...")
-    total_rain_field = apcp_field - previous_apcp_field
+    total_field_rain = field_apcp - previous_field_apcp
+
+    plot_logger.debug("loading done")
 
     return PlotData(
-        rain_field=total_rain_field,
+        field_rain=total_field_rain,
     )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
-    rain_field = plot_data.rain_field
-
     system_name = plot_metadata.system_name
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
@@ -96,24 +99,36 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         colorbar_style=ColorbarStyle(label="rain")
     )
 
-    # plot
+    # create domain
     if area_range is None:
         domain = EastAsiaMapTemplate()
     else:
         domain = CnAreaMapTemplate(area=area_range)
-    panel = Panel(domain=domain)
-    panel.plot(rain_field, style=rain_style)
-
     previous_forecast_time = forecast_time - pd.Timedelta(hours=24)
     forcast_hour_label = f"{int(forecast_time/pd.Timedelta(hours=1)):03d}"
     previous_forcast_hour_label = f"{int(previous_forecast_time/pd.Timedelta(hours=1)):03d}"
+    graph_name = f"surface cumulated precipitation: {previous_forcast_hour_label}-{forcast_hour_label}h"
+
+    # prepare data
+    plot_logger.debug("preparing data...")
+    total_area = domain.total_area()
+    plot_data : PlotData = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
+
+    plot_field_rain = plot_data.field_rain
+
+    # plot
+    plot_logger.debug("plotting...")
+    panel = Panel(domain=domain)
+    panel.plot(plot_field_rain, style=rain_style)
+
     domain.set_title(
         panel=panel,
-        graph_name=f"surface cumulated precipitation: {previous_forcast_hour_label}-{forcast_hour_label}h",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=rain_style)
+    plot_logger.debug("plotting...done")
 
     return panel

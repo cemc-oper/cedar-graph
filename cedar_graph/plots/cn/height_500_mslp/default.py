@@ -16,8 +16,10 @@ from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.util import AreaRange
 
+from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import hgt_info, mslp_info
+from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
 
@@ -25,18 +27,18 @@ plot_logger = get_logger(__name__)
 
 
 @dataclass
-class PlotData:
-    hgt_500_field: xr.DataArray
-    mslp_field: xr.DataArray
-
-
-@dataclass
-class PlotMetadata:
+class PlotMetadata(BasePlotMetadata):
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
     area_range: Optional[AreaRange] = None
     area_name: str = None
+
+
+@dataclass
+class PlotData:
+    field_hgt_500: xr.DataArray
+    field_mslp: xr.DataArray
 
 
 def load_data(
@@ -47,14 +49,14 @@ def load_data(
     hgt_500_info = deepcopy(hgt_info)
     hgt_500_info.level_type = "pl"
     hgt_500_info.level = 500
-    h_500_field = data_loader.load(
+    field_h_500 = data_loader.load(
         field_info=hgt_500_info,
         start_time=start_time,
         forecast_time=forecast_time
     )
 
     plot_logger.debug("loading mslp...")
-    mslp_field = data_loader.load(
+    field_mslp = data_loader.load(
         field_info=mslp_info,
         start_time=start_time,
         forecast_time=forecast_time
@@ -63,27 +65,26 @@ def load_data(
     # data field -> plot data
     plot_logger.debug("calculating...")
     # 单位转换
-    h_500_field = h_500_field / 10.
+    field_h_500 = field_h_500 / 10.
     # 平滑
-    h_500_field = apply_to_xarray_values(h_500_field, lambda x: smth9(x, 0.5, 0.25, False))
-    h_500_field = apply_to_xarray_values(h_500_field, lambda x: smth9(x, 0.5, 0.25, False))
-    h_500_field = apply_to_xarray_values(h_500_field, lambda x: smth9(x, 0.5, 0.25, False))
-    h_500_field = apply_to_xarray_values(h_500_field, lambda x: smth9(x, 0.5, 0.25, False))
+    field_h_500 = apply_to_xarray_values(field_h_500, lambda x: smth9(x, 0.5, 0.25, False))
+    field_h_500 = apply_to_xarray_values(field_h_500, lambda x: smth9(x, 0.5, 0.25, False))
+    field_h_500 = apply_to_xarray_values(field_h_500, lambda x: smth9(x, 0.5, 0.25, False))
+    field_h_500 = apply_to_xarray_values(field_h_500, lambda x: smth9(x, 0.5, 0.25, False))
 
-    mslp_field = mslp_field / 100.
-    mslp_field = apply_to_xarray_values(mslp_field, lambda x: smth9(x, 0.5, -0.25, False))
-    mslp_field = apply_to_xarray_values(mslp_field, lambda x: smth9(x, 0.5, -0.25, False))
+    field_mslp = field_mslp / 100.
+    field_mslp = apply_to_xarray_values(field_mslp, lambda x: smth9(x, 0.5, -0.25, False))
+    field_mslp = apply_to_xarray_values(field_mslp, lambda x: smth9(x, 0.5, -0.25, False))
+
+    plot_logger.debug("loading done")
 
     return PlotData(
-        hgt_500_field=h_500_field,
-        mslp_field=mslp_field,
+        field_hgt_500=field_h_500,
+        field_mslp=field_mslp,
     )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
-    h_500_field = plot_data.hgt_500_field
-    mslp_field = plot_data.mslp_field
-
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
@@ -140,7 +141,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         )
     )
 
-    # plot
+    # create domain
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
@@ -148,9 +149,19 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
 
     graph_name = "500 hPa Height(10gpm), Sea Level Pressure(hPa,shadow)"
 
+    # prepare data
+    plot_logger.debug("preparing data...")
+    total_area = domain.total_area()
+    plot_data = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
+
+    plot_field_mslp = plot_data.field_mslp
+    plot_field_hgt_500 = plot_data.field_hgt_500
+
+    # plot
+    plot_logger.debug("plotting...")
     panel = Panel(domain=domain)
-    panel.plot(mslp_field, style=mslp_style)
-    panel.plot(h_500_field[::10, ::10], style=hgt_style)
+    panel.plot(plot_field_mslp, style=mslp_style)
+    panel.plot(plot_field_hgt_500, style=hgt_style)
 
     domain.set_title(
         panel=panel,
@@ -160,5 +171,6 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=mslp_style)
+    plot_logger.debug("plotting...done")
 
     return panel

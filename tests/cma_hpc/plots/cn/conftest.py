@@ -14,7 +14,7 @@ def default_wind_level() -> float:
 
 @pytest.fixture
 def default_sample_step() -> float:
-    return 1
+    return 0.5
 
 
 @pytest.fixture(

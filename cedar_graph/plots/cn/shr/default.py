@@ -7,7 +7,7 @@ import pandas as pd
 import xarray as xr
 import matplotlib.colors as mcolors
 
-from cedarkit.maps.style import ContourStyle, ContourLabelStyle
+from cedarkit.maps.style import ContourStyle
 from cedarkit.maps.chart import Panel
 from cedarkit.maps.domains import CnAreaMapTemplate, EastAsiaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap, generate_colormap_using_ncl_colors
@@ -17,8 +17,10 @@ from cedarkit.maps.util import AreaRange
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values
 
+from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import vwsh_info
+from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
 
@@ -26,7 +28,7 @@ plot_logger = get_logger(__name__)
 
 
 @dataclass
-class PlotMetadata:
+class PlotMetadata(BasePlotMetadata):
     system_name: str = None
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
@@ -38,7 +40,7 @@ class PlotMetadata:
 
 @dataclass
 class PlotData:
-    vwsh_field: xr.DataArray
+    field_vwsh: xr.DataArray
     first_level: Literal[1000, 3000, 6000]
     second_level: float
 
@@ -69,22 +71,22 @@ def load_data(
     vwsh_field = apply_to_xarray_values(vwsh_field, lambda x: smth9(x, 0.5, -0.25, False))
     vwsh_field = apply_to_xarray_values(vwsh_field, lambda x: smth9(x, 0.5, -0.25, False))
 
+    plot_logger.debug("loading done")
+
     return PlotData(
-        vwsh_field=vwsh_field,
+        field_vwsh=vwsh_field,
         first_level=first_level,
         second_level=second_level,
     )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
-    vwsh_field = plot_data.vwsh_field
+    vwsh_field = plot_data.field_vwsh
 
     system_name = plot_metadata.system_name
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     area_name = plot_metadata.area_name
-    if area_name is None:
-        area_name = ""
     area_range = plot_metadata.area_range
     first_level = plot_metadata.first_level
     second_level = plot_metadata.second_level
@@ -132,8 +134,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         max_count=len(color_index),
         outside=False,
     )
-    print("value range:", min_value, max_value)
-    print("auto level:", level_setting)
+    plot_logger.debug(f"value range: {min_value} {max_value}")
+    plot_logger.debug(f"auto level: {level_setting}")
     vwsh_levels = np.arange(level_setting.min_value, level_setting.max_value + level_setting.step, level_setting.step)
     vwsh_color_map = mcolors.ListedColormap(vwsh_color_map(np.arange(0, len(vwsh_levels) + 1)), "final_color_map")
 
@@ -150,19 +152,28 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         linewidths=0.3,
     )
 
-    # plot
+    # create domain
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
         domain = CnAreaMapTemplate(area=area_range)
+    graph_name = f"{area_name} {int(second_level/1000)}-{int(first_level/1000)}km shear (m/s)"
 
+    # prepare data
+    plot_logger.debug("preparing data...")
+    total_area = domain.total_area()
+    plot_data : PlotData = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
+
+    plot_field_vwsh = plot_data.field_vwsh
+
+    # plot
     panel = Panel(domain=domain)
-    panel.plot(vwsh_field[::3, ::3], style=vwsh_style)
-    panel.plot(vwsh_field[::3, ::3], style=vwsh_line_style)
+    panel.plot(plot_field_vwsh, style=vwsh_style)
+    panel.plot(plot_field_vwsh, style=vwsh_line_style)
 
     domain.set_title(
         panel=panel,
-        graph_name=f"{area_name} {int(second_level/1000)}-{int(first_level/1000)}km shear (m/s)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,

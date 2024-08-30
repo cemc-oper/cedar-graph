@@ -13,8 +13,10 @@ from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.maps.colormap import get_ncl_colormap
 from cedarkit.maps.util import AreaRange
 
+from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import t_2m_info
+from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
 
@@ -22,17 +24,17 @@ plot_logger = get_logger(__name__)
 
 
 @dataclass
-class PlotData:
-    t_2m_field: xr.DataArray
-
-
-@dataclass
-class PlotMetadata:
+class PlotMetadata(BasePlotMetadata):
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
     area_name: Optional[str] = None
     area_range: Optional[AreaRange] = None
+
+
+@dataclass
+class PlotData:
+    field_t_2m: xr.DataArray
 
 
 def load_data(
@@ -53,8 +55,10 @@ def load_data(
     plot_logger.debug("calculating...")
     t_2m_field = t_2m_field - 273.15
 
+    plot_logger.debug("loading done")
+
     return PlotData(
-        t_2m_field=t_2m_field
+        field_t_2m=t_2m_field
     )
 
 
@@ -72,10 +76,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     Returns
     -------
     Panel
-        cedarkit.maps 包的绘图板对象
+        绘图板对象
     """
-    t_2m_field = plot_data.t_2m_field
-
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
@@ -99,21 +101,33 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         fill=True,
     )
 
-    # plot
+    # create domain
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
     else:
         domain = CnAreaMapTemplate(area=area_range)
+    graph_name = "2m Temperature (C)"
+
+    # prepare data
+    plot_logger.debug("preparing data...")
+    total_area = domain.total_area()
+    plot_data : PlotData = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
+
+    plot_field_t_2m = plot_data.field_t_2m
+
+    # plot
+    plot_logger.debug("plotting...")
     panel = Panel(domain=domain)
-    panel.plot(t_2m_field, style=t_2m_style)
+    panel.plot(plot_field_t_2m, style=t_2m_style)
 
     domain.set_title(
         panel=panel,
-        graph_name="2m Temperature (C)",
+        graph_name=graph_name,
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=t_2m_style)
+    plot_logger.debug("plotting...done")
 
     return panel

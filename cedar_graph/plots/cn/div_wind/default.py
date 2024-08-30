@@ -15,8 +15,10 @@ from cedarkit.maps.util import AreaRange
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values
 
+from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
 from cedar_graph.data.field_info import div_info, u_info, v_info
+from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
 
@@ -24,7 +26,7 @@ plot_logger = get_logger(__name__)
 
 
 @dataclass
-class PlotMetadata:
+class PlotMetadata(BasePlotMetadata):
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
@@ -36,9 +38,9 @@ class PlotMetadata:
 
 @dataclass
 class PlotData:
-    div_field: xr.DataArray
-    u_field: xr.DataArray
-    v_field: xr.DataArray
+    field_div: xr.DataArray
+    field_u: xr.DataArray
+    field_v: xr.DataArray
     div_level: float
     wind_level: float
 
@@ -57,7 +59,7 @@ def load_data(
     u_level_info = deepcopy(u_info)
     u_level_info.level_type = "pl"
     u_level_info.level = wind_level
-    u_field = data_loader.load(
+    field_u = data_loader.load(
         field_info=u_level_info,
         start_time=start_time,
         forecast_time=forecast_time
@@ -66,7 +68,7 @@ def load_data(
     v_level_info = deepcopy(v_info)
     v_level_info.level_type = "pl"
     v_level_info.level = wind_level
-    v_field = data_loader.load(
+    field_v = data_loader.load(
         field_info=v_level_info,
         start_time=start_time,
         forecast_time=forecast_time
@@ -76,32 +78,31 @@ def load_data(
     div_level_info = deepcopy(div_info)
     div_level_info.level_type = "pl"
     div_level_info.level = div_level
-    div_field = data_loader.load(
+    field_div = data_loader.load(
         field_info=div_level_info,
         start_time=start_time,
         forecast_time=forecast_time
     )
 
+
     # data field -> plot data
     plot_logger.debug("calculating...")
-    div_field = div_field * 1.0e5
-    div_field = apply_to_xarray_values(div_field, lambda x: smth9(x, 0.5, -0.25, False))
-    div_field = apply_to_xarray_values(div_field, lambda x: smth9(x, 0.5, -0.25, False))
+    field_div = field_div * 1.0e5
+    field_div = apply_to_xarray_values(field_div, lambda x: smth9(x, 0.5, -0.25, False))
+    field_div = apply_to_xarray_values(field_div, lambda x: smth9(x, 0.5, -0.25, False))
+
+    plot_logger.debug("loading done")
 
     return PlotData(
-        div_field=div_field,
-        u_field=u_field,
-        v_field=v_field,
+        field_div=field_div,
+        field_u=field_u,
+        field_v=field_v,
         div_level=div_level,
         wind_level=wind_level,
     )
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
-    div_field = plot_data.div_field
-    u_field = plot_data.u_field
-    v_field = plot_data.v_field
-
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time
     system_name = plot_metadata.system_name
@@ -137,7 +138,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         # barb_increments=dict(half=2, full=4, flag=20)
     )
 
-    # plot
+    # create domain
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
         graph_name = f"{area_name} {div_level}hPa Divergence ($1.0^{{-5}}s^{{-1}}$) and Wind(m/s)"
@@ -145,10 +146,21 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         domain = CnAreaMapTemplate(area=area_range)
         graph_name = f"{div_level}hPa Divergence ($1.0^{{-5}}s^{{-1}}$) and Wind(m/s)"
 
+    # prepare data
+    plot_logger.debug("preparing data...")
+    total_area = domain.total_area()
+    plot_data = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
+
+    plot_field_div = plot_data.field_div
+    plot_field_u = plot_data.field_u
+    plot_field_v = plot_data.field_v
+
+    # plot
+    plot_logger.debug("plotting...")
     panel = Panel(domain=domain)
-    panel.plot(div_field[::5, ::5], style=div_style)
-    panel.plot(div_field[::5, ::5], style=div_line_style)
-    panel.plot([[u_field[::3, ::3], v_field[::3, ::3]]], style=barb_style, layer=[0])
+    panel.plot(plot_field_div, style=div_style)
+    panel.plot(plot_field_div, style=div_line_style)
+    panel.plot([[plot_field_u, plot_field_v]], style=barb_style, layer=[0])
 
     domain.set_title(
         panel=panel,
@@ -158,5 +170,6 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         forecast_time=forecast_time,
     )
     domain.add_colorbar(panel=panel, style=div_style)
+    plot_logger.debug("plotting...done")
 
     return panel
