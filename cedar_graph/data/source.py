@@ -105,7 +105,8 @@ class LocalDataSource(DataSource):
 
     Notes
     -----
-    use embedded config files in reki.
+    use embedded config files in reki by default.
+    For other data source, please set ``file_path_func`` when object created.
     """
     def __init__(self, system_name: str, file_path_func: Optional[Callable] = None):
         super().__init__()
