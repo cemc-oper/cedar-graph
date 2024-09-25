@@ -86,7 +86,6 @@ def test_cn_area(plot_name, system_name, last_two_day, cn_area_north_china, outp
     panel.save(output_image_path)
 
 
-@pytest.mark.skip(reason="run too slow.")
 def test_cn_areas(plot_name, system_name, last_two_day, cn_area, output_dir, default_sample_step):
     start_time = last_two_day
     forecast_time = pd.to_timedelta("24h")
