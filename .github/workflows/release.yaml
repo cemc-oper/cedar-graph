@@ -1,6 +1,13 @@
 name: release
 
-on: push
+#on: push
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   build:
