@@ -35,8 +35,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "http://codingcorp.mc.met.cma/public/cedarkit/cedar-graph/git/files/"
-Repository = "http://e.mc.met.cma/codingcorp/cedarkit/cedar-graph.git"
+Homepage = "https://github.com/cemc-oper/cedar-graph"
+Repository = "https://github.com/cemc-oper/cedar-graph.git"
 
 [project.optional-dependencies]
 test = ["pytest"]
