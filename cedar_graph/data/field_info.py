@@ -149,8 +149,8 @@ cin_info = FieldInfo(
 
 
 # 最优抬升指数
-bpli_info = FieldInfo(
-    name="bpli",
+bli_info = FieldInfo(
+    name="bli",
     parameter=Parameter(
         wgrib2_name="BLI"
     )

@@ -3,13 +3,13 @@ from pathlib import Path
 import pytest
 import pandas as pd
 
-from cedar_graph.plots.cn.bpli_wind.default import PlotMetadata, plot, load_data
+from cedar_graph.plots.cn.bli_wind.default import PlotMetadata, plot, load_data
 from cedar_graph.data import LocalDataSource, DataLoader
 
 
 @pytest.fixture
 def plot_name():
-    return "bpli_wind"
+    return "bli_wind"
 
 
 def test_cn(plot_name, system_name, last_two_day, default_wind_level, output_dir, default_sample_step):

@@ -14,7 +14,7 @@ from cedarkit.maps.util import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
-from cedar_graph.data.field_info import u_info, v_info, bpli_info
+from cedar_graph.data.field_info import u_info, v_info, bli_info
 from cedar_graph.data.operator import prepare_data
 from cedar_graph.logger import get_logger
 
@@ -49,7 +49,7 @@ def load_data(
 ) -> PlotData:
     plot_logger.debug("loading bpli...")
     field_bpli = data_loader.load(
-        field_info=bpli_info,
+        field_info=bli_info,
         start_time=start_time,
         forecast_time=forecast_time,
     )
