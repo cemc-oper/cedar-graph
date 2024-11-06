@@ -54,6 +54,15 @@ t_info = FieldInfo(
 )
 
 
+# 2米湿度
+rh_2m_info = FieldInfo(
+    name="rh2m",
+    parameter=Parameter(
+        eccodes_short_name="2r",
+    )
+)
+
+
 # 位势高度
 hgt_info = FieldInfo(
     name="h",
