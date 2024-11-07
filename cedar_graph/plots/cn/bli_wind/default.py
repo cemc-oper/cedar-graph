@@ -34,7 +34,7 @@ class PlotMetadata(BasePlotMetadata):
 
 @dataclass
 class PlotData:
-    field_bpli: xr.DataArray
+    field_bli: xr.DataArray
     field_u: xr.DataArray
     field_v: xr.DataArray
     wind_level: float
@@ -47,8 +47,8 @@ def load_data(
         wind_level: float,
         **kwargs,
 ) -> PlotData:
-    plot_logger.debug("loading bpli...")
-    field_bpli = data_loader.load(
+    plot_logger.debug("loading bli...")
+    field_bli = data_loader.load(
         field_info=bli_info,
         start_time=start_time,
         forecast_time=forecast_time,
@@ -76,7 +76,7 @@ def load_data(
     plot_logger.debug(f"loading done")
 
     return PlotData(
-        field_bpli=field_bpli,
+        field_bli=field_bli,
         field_u=field_u,
         field_v=field_v,
         wind_level=wind_level,
@@ -91,18 +91,18 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
     area_name = plot_metadata.area_name
 
-    bpli_levels = np.array([-48, -42, -36, -30, -24, -18, -12, -6, 0])
+    bli_levels = np.array([-48, -42, -36, -30, -24, -18, -12, -6, 0])
     colormap_index = np.array([20, 19, 18, 16, 14, 12, 10, 8, 6, 4]) - 2
-    bpli_colormap = get_ncl_colormap("prcp_3", index=colormap_index)
+    bli_colormap = get_ncl_colormap("prcp_3", index=colormap_index)
 
-    bpli_style = ContourStyle(
-        colors=bpli_colormap,
-        levels=bpli_levels,
+    bli_style = ContourStyle(
+        colors=bli_colormap,
+        levels=bli_levels,
         fill=True,
     )
-    bpli_line_style = ContourStyle(
+    bli_line_style = ContourStyle(
         colors="black",
-        levels=bpli_levels,
+        levels=bli_levels,
         linewidths=0.5,
         fill=False,
         label=True,
@@ -122,25 +122,25 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     # create domain
     if plot_metadata.area_range is None:
         domain = EastAsiaMapTemplate()
-        graph_name = f"BPLI(shadow) and {wind_level}hPa Wind(m/s)"
+        graph_name = f"BLI(shadow) and {wind_level}hPa Wind(m/s)"
     else:
         domain = CnAreaMapTemplate(area=area_range)
-        graph_name = f"{area_name} BPLI(shadow) and {wind_level}hPa Wind(m/s)"
+        graph_name = f"{area_name} BLI(shadow) and {wind_level}hPa Wind(m/s)"
 
     # prepare data
     plot_logger.debug(f"preparing data...")
     total_area = domain.total_area()
     plot_data = prepare_data(plot_data=plot_data, plot_metadata=plot_metadata, total_area=total_area)
 
-    plot_field_bpli = plot_data.field_bpli
+    plot_field_bli = plot_data.field_bli
     plot_field_u = plot_data.field_u
     plot_field_v = plot_data.field_v
 
     # create panel and plot
     plot_logger.debug(f"plotting...")
     panel = Panel(domain=domain)
-    panel.plot(plot_field_bpli, style=bpli_style)
-    panel.plot(plot_field_bpli, style=bpli_line_style)
+    panel.plot(plot_field_bli, style=bli_style)
+    panel.plot(plot_field_bli, style=bli_line_style)
     panel.plot([[plot_field_u, plot_field_v]], style=barb_style, layer=[0])
 
     domain.set_title(
@@ -150,7 +150,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         start_time=start_time,
         forecast_time=forecast_time,
     )
-    domain.add_colorbar(panel=panel, style=bpli_style)
+    domain.add_colorbar(panel=panel, style=bli_style)
     plot_logger.debug(f"plotting...done")
 
     return panel
