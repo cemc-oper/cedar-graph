@@ -24,16 +24,47 @@ plot_logger = get_logger(__name__)
 
 @dataclass
 class PlotMetadata(BasePlotMetadata):
+    """
+    Information except data needed by plot.
+    All properties are default None to create an empty instance.
+
+    Attributes
+    ----------
+    start_time : pd.Timestamp
+    forecast_time : pd.Timestamp
+    system_name : str
+        system name is printed in the top right corner of the plot box.
+    area_range : Optional[AreaRange]
+        plot area. If None, draw china.
+    area_name : Optional[str]
+        plot area name. Should be set when area_range is not None.
+    wind_level : float
+        level value for wind fields.
+    """
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
     area_range: Optional[AreaRange] = None
-    area_name: str = None
+    area_name: Optional[str] = None
     wind_level: float = None
 
 
 @dataclass
 class PlotData:
+    """
+    All data needed by plot.
+
+    Attributes
+    ----------
+    field_bli : xr.DataArray
+        BLI field.
+    field_u : xr.DataArray
+        U field.
+    field_v : xr.DataArray
+        V field.
+    wind_level : float
+        level value for U and V fields.
+    """
     field_bli: xr.DataArray
     field_u: xr.DataArray
     field_v: xr.DataArray
@@ -47,6 +78,24 @@ def load_data(
         wind_level: float,
         **kwargs,
 ) -> PlotData:
+    """
+    load data from data loader.
+
+    Parameters
+    ----------
+    data_loader
+        A data loader with some data source.
+    start_time
+    forecast_time
+    wind_level
+        level value for wind fields.
+    kwargs
+
+    Returns
+    -------
+    PlotData
+        plot data
+    """
     plot_logger.debug("loading bli...")
     field_bli = data_loader.load(
         field_info=bli_info,
@@ -84,6 +133,21 @@ def load_data(
 
 
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
+    """
+    Plot the graph using plot data and plot metadata.
+
+    Parameters
+    ----------
+    plot_data
+        data for plot.
+    plot_metadata
+        metadata for plot.
+
+    Returns
+    -------
+    Panel
+        plot panel object.
+    """
     system_name = plot_metadata.system_name
     start_time = plot_metadata.start_time
     forecast_time = plot_metadata.forecast_time

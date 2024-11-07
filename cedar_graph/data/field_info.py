@@ -4,6 +4,20 @@ from typing import Union, Optional, Dict
 
 @dataclass
 class Parameter:
+    """
+    Parameter information, mainly field name, to be used in reki functions.
+
+    Attributes
+    ----------
+    eccodes_short_name
+        shortname used in eccodes
+    eccodes_keys
+        GRIB keys supported in eccodes
+    wgrib2_name
+        WGRIB2 field name embedded in reki
+    cemc_name
+        CEMC field name embedded in reki
+    """
     eccodes_short_name: Optional[str] = None
     eccodes_keys: Optional[Dict[str, int]] = None
     wgrib2_name: Optional[str] = None
@@ -29,6 +43,21 @@ class Parameter:
 
 @dataclass
 class FieldInfo:
+    """
+    Field information, used in reki functions.
+
+    Attributes
+    ----------
+    name
+        field name.
+    parameter
+        field name, for `parameter` option.
+    level_type
+        field level type, for `level_type` option.
+    level
+        field level value, for `level` option.
+
+    """
     name: str
     parameter: Parameter
     level_type: Optional[Union[str, Dict[str, int]]] = None

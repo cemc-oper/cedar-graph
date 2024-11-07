@@ -30,20 +30,20 @@ def quick_plot(
     Parameters
     ----------
     plot_type
-        绘图种类。默认使用 cedar_graph 绘图包，即使用 "cedar_graph.plots.{plot_type}" 模块
+        Plot type. Use plots in cedar-graph package, plot_type is a module named "cedar_graph.plots.{plot_type}".
     system_name
-        系统名称。默认支持的系统名称如下：
+        system name. default supported systems:
 
-        * CMA-GFS：全球模式
-        * CMA-MESO：区域模式（3KM）
-        * CMA-TYM：台风模式
-        * CMA-MESO-1KM：区域模式（1KM）
+        * CMA-GFS：global forecast system
+        * CMA-MESO：regional system (3km)
+        * CMA-TYM：regional typhoon forecast system
+        * CMA-MESO-1KM：regional forecast system (1km)
     start_time
-        起报时间
+        start time, such as YYYY-MM-DD HH:00:00
     forecast_time
-        预报时效
+        forecast time, such as 24h
     kwargs
-        其他需要的参数
+        other parameters passed to ``show_plot``'s ``plot_settings`` param.
     """
     plot_settings = dict(
         system_name=system_name,
@@ -100,18 +100,18 @@ def create_data_source(metadata) -> DataSource:
 
 def get_plot_module(plot_type: str, base_module_name: str = "cedar_graph.plots") -> types.ModuleType:
     """
-    根据绘图类型返回绘图模块
+    Return plot module basd on plot type.
 
     Parameters
     ----------
     plot_type
-        绘图种类
+        plot type
     base_module_name
-        基础模块名
+        base module name
     Returns
     -------
     types.ModuleType
-        绘图模块
+        plot module
     """
     plot_module = importlib.import_module(f"{base_module_name}.{plot_type}")
     return plot_module
@@ -119,15 +119,17 @@ def get_plot_module(plot_type: str, base_module_name: str = "cedar_graph.plots")
 
 def get_metadata_class(plot_module: types.ModuleType):
     """
-    获取绘图模块中的 PlotMetadata 类
+    get ``PlotMetadata`` class from plot module.
 
     Parameters
     ----------
     plot_module
 
+
     Returns
     -------
-
+    PlotMetadata
+        A ``PlotMetadata`` class from ``plot_module``.
     """
     metadata_class = plot_module.PlotMetadata
     return metadata_class
@@ -135,7 +137,8 @@ def get_metadata_class(plot_module: types.ModuleType):
 
 def convert_metadata(from_metadata, to_metadata):
     """
-    使用一种 metadata 对象 (from_metadata) 的属性填充另一种 metadata 对象 (to_metadata)
+    Fill one metadata object (``to_metadata``) properties with
+    corresponding properties in another metadata (``from_metadata``).
 
     Parameters
     ----------
@@ -151,18 +154,21 @@ def convert_metadata(from_metadata, to_metadata):
 
 def create_metadata(metadata_class, plot_settings: dict[str, Any], processor_map: dict[str, Callable]):
     """
-    从字典对象创建 Metadata 对象
+    Create a Metadata object, fill properties with all keys in dict.
 
     Parameters
     ----------
     metadata_class
+        metadata class reference.
     plot_settings
+        Properties to be filled in Metadata object. No nested dict.
     processor_map
-        配置项处理函数映射表
+        A function mapper to process item in dict.
 
     Returns
     -------
-
+    Metadata
+        A Metadata object with properties from dict.
     """
     metadata = metadata_class()
 
@@ -178,6 +184,17 @@ def create_metadata(metadata_class, plot_settings: dict[str, Any], processor_map
 
 
 def process_start_time(item: Union[str, pd.Timestamp]) -> pd.Timestamp:
+    """
+    convert item to timestamp object.
+
+    Parameters
+    ----------
+    item
+
+    Returns
+    -------
+    pd.Timestamp
+    """
     parsed_item = None
     if isinstance(item, str):
         if len(item) == 10:
@@ -194,7 +211,18 @@ def process_start_time(item: Union[str, pd.Timestamp]) -> pd.Timestamp:
     return parsed_item
 
 
-def process_forecast_time(item: Union[str, pd.Timedelta]) -> pd.Timestamp:
+def process_forecast_time(item: Union[str, pd.Timedelta]) -> pd.Timedelta:
+    """
+    convert itme to timedelta object.
+
+    Parameters
+    ----------
+    item
+
+    Returns
+    -------
+    pd.Timedelta
+    """
     parsed_item = None
     if isinstance(item, str):
         parsed_item = pd.to_timedelta(item)
@@ -207,6 +235,17 @@ def process_forecast_time(item: Union[str, pd.Timedelta]) -> pd.Timestamp:
 
 
 def process_area_range(item: Union[dict, AreaRange]) -> AreaRange:
+    """
+    convert item to ``AreaRange`` object.
+
+    Parameters
+    ----------
+    item
+
+    Returns
+    -------
+    AreaRange
+    """
     parsed_item = None
     if isinstance(item, dict):
         parsed_item = AreaRange(**item)

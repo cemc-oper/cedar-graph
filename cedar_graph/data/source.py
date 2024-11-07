@@ -12,6 +12,9 @@ from .field_info import FieldInfo
 
 
 class DataSource(ABC):
+    """
+    An abstract base class for data source.
+    """
     def __init__(self):
         ...
 
@@ -83,6 +86,7 @@ def get_file_path(system_name, start_time, forecast_time, **kwargs) -> Union[str
     start_time
     forecast_time
     kwargs
+        other keyword arguments passed to ``find_local_file()``
 
     Returns
     -------
@@ -117,11 +121,29 @@ class LocalDataSource(DataSource):
             self.find_path_func = file_path_func
 
     def retrieve(
-            self, field_info: FieldInfo,
+            self,
+            field_info: FieldInfo,
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
             **kwargs,
     ) -> xr.DataArray or None:
+        """
+        Find the local file path using ``find_path_func()``,
+        and load the field using  ``get_field_from_file()``
+
+        Parameters
+        ----------
+        field_info
+        start_time
+        forecast_time
+        kwargs
+            other keyword arguments passed to ``find_path_func``
+
+        Returns
+        -------
+        xr.DataArray or None
+            field if found, None if not.
+        """
         file_path = self.find_path_func(
             system_name=self.system_name,
             start_time=start_time,
