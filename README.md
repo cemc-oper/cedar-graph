@@ -120,7 +120,7 @@ panel.show()
 |           | k_wind              | K Index + Wind                                                                         | K指数+风场                    |
 |           | cin_wind            | CIN + Wind                                                                             | CIN+风场                    |
 |           | cape_wind           | CAPE + Wind                                                                            | CAPE+风场                   |
-|           | bli_wind            | Best lifted index + Wind                                                               | 最优抬升指数 + Wind             |
+|           | bli_wind            | Best lifted index + Wind                                                               | 最优抬升指数 + 风场               |
 |           | pte_wind            | Difference in pseudo-equivalent potential temperature between 500hPa and 850hPa + Wind | 500hPa与850hPa假相当位温之差+风场   |
 |           | qv_div              | Moisture flux divergence                                                               | 水汽通量散度                    |
 |           | shr                 | Vertical wind shear (0-1km/0-3km/0-6km)                                                | 垂直风切变 (0-1km/0-3km/0-6km) |

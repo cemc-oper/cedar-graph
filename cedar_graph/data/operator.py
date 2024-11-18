@@ -41,17 +41,17 @@ def prepare_data(plot_data, plot_metadata: BasePlotMetadata, total_area: AreaRan
         if f.type == xr.DataArray and f.name.index("field_") != -1
     ])
 
-    if auto_extract_area:
-        for field_name in field_names:
-            field = getattr(plot_data, field_name)
-            plot_field = extract_area(field, area=total_area)
-            setattr(plot_data, field_name, plot_field)
-
     if auto_sample_nearest:
         sample_step = plot_metadata.sample_step
         for field_name in field_names:
             field = getattr(plot_data, field_name)
             plot_field = sample_nearest(field, longitude_step=sample_step, latitude_step=sample_step)
+            setattr(plot_data, field_name, plot_field)
+
+    if auto_extract_area:
+        for field_name in field_names:
+            field = getattr(plot_data, field_name)
+            plot_field = extract_area(field, area=total_area)
             setattr(plot_data, field_name, plot_field)
 
     return plot_data
@@ -70,8 +70,10 @@ def extract_area(field: xr.DataArray, area: AreaRange) -> xr.DataArray:
     -------
     xr.DataArray
     """
-    longitude_range = slice(area.start_longitude, area.end_longitude)
-    latitude_range = slice(area.end_latitude, area.start_latitude)
+    lat_step = field.latitude[1] - field.latitude[0]
+    lon_step = field.longitude[1] - field.longitude[0]
+    longitude_range = slice(area.start_longitude - lon_step, area.end_longitude + lon_step)
+    latitude_range = slice(area.end_latitude - lat_step, area.start_latitude + lat_step)
     extracted_array = field.sel(
         longitude=longitude_range,
         latitude=latitude_range,
