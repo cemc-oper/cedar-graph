@@ -126,7 +126,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     elif interval == pd.Timedelta(hours=3):
         map_colors = [
             "White",
-            "DarkOliveGreen3",
+            "paleGreen2",
             "forestgreen",
             "deepSkyBlue",
             "Blue",
@@ -138,7 +138,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     elif interval == pd.Timedelta(hours=6):
         map_colors = [
             "White",
-            "DarkOliveGreen3",
+            "paleGreen2",
             "forestgreen",
             "deepSkyBlue",
             "Blue",
@@ -149,7 +149,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     elif interval == pd.Timedelta(hours=12):
         map_colors = [
             "White",
-            "DarkOliveGreen3",
+            "paleGreen2",
             "forestgreen",
             "deepSkyBlue",
             "Blue",
@@ -162,7 +162,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         map_colors = [
                 "transparent",
                 "White",
-                "DarkOliveGreen3",
+                "paleGreen2",
                 "forestgreen",
                 "deepSkyBlue",
 	    		"Blue",
