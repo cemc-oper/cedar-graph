@@ -6,7 +6,7 @@ from dataclasses import dataclass, fields
 import pandas as pd
 
 from cedar_graph.data import LocalDataSource, DataSource, DataLoader
-from cedarkit.plots.util import AreaRange
+from cedarkit.plots.types import AreaRange
 
 
 # set_default_map_loader_package("cedarkit.plots.map.cemc")

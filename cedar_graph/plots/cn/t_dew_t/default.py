@@ -10,7 +10,7 @@ from cedarkit.plots.style import ContourStyle, ContourLabelStyle
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
 from cedarkit.plots.colormap import get_ncl_colormap
-from cedarkit.plots.util import AreaRange
+from cedarkit.plots.types import AreaRange
 
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values

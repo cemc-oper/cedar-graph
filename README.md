@@ -43,7 +43,7 @@ Draw wind speed contour fill plot for 10m wind using CMA-MESO GRIB2 data.
 
 ```py
 from cedar_graph.quickplot import quick_plot
-from cedarkit.plots.util import AreaRange
+from cedarkit.plots.types import AreaRange
 
 plot_type = "cn.wind_10m.default"
 plot_settings = dict(

@@ -10,7 +10,7 @@ from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.plots.colormap import generate_colormap_using_ncl_colors
-from cedarkit.plots.util import AreaRange
+from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader

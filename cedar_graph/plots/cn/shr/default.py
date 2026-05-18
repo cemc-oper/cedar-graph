@@ -12,7 +12,7 @@ from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
 from cedarkit.plots.colormap import get_ncl_colormap, generate_colormap_using_ncl_colors
 from cedarkit.plots.calculate import calculate_levels_automatic
-from cedarkit.plots.util import AreaRange
+from cedarkit.plots.types import AreaRange
 
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values
