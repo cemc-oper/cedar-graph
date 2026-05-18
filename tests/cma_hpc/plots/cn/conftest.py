@@ -4,7 +4,7 @@ from typing import Optional
 
 import pytest
 
-from cedarkit.maps.util import AreaRange
+from cedarkit.plots.util import AreaRange
 
 
 @pytest.fixture

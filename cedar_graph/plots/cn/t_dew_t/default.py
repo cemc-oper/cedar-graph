@@ -6,11 +6,11 @@ import pandas as pd
 import xarray as xr
 import matplotlib.colors as mcolors
 
-from cedarkit.maps.style import ContourStyle, ContourLabelStyle
-from cedarkit.maps.chart import Panel
-from cedarkit.maps.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.maps.colormap import get_ncl_colormap
-from cedarkit.maps.util import AreaRange
+from cedarkit.plots.style import ContourStyle, ContourLabelStyle
+from cedarkit.plots.chart import Panel
+from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
+from cedarkit.plots.colormap import get_ncl_colormap
+from cedarkit.plots.util import AreaRange
 
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values

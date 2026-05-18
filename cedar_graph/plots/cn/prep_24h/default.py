@@ -5,12 +5,12 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.maps.style import ContourStyle, ColorbarStyle
-from cedarkit.maps.colormap import get_ncl_colormap
-from cedarkit.maps.chart import Panel
-from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
-from cedarkit.maps.colormap import generate_colormap_using_ncl_colors
-from cedarkit.maps.util import AreaRange
+from cedarkit.plots.style import ContourStyle, ColorbarStyle
+from cedarkit.plots.colormap import get_ncl_colormap
+from cedarkit.plots.chart import Panel
+from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
+from cedarkit.plots.colormap import generate_colormap_using_ncl_colors
+from cedarkit.plots.util import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader

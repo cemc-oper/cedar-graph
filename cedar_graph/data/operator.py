@@ -5,7 +5,7 @@ from typing import Optional
 import xarray as xr
 import numpy as np
 
-from cedarkit.maps.util import AreaRange
+from cedarkit.plots.util import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
 
