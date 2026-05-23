@@ -21,6 +21,8 @@ classifiers = [
 
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "numpy",
@@ -56,3 +58,8 @@ version_file = "cedar_graph/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/mock"]
+
+[tool.uv.sources]
+cedarkit-plots = { path = "../cedarkit-plots", editable = true }
+cedarkit-comp = { path = "../cedarkit-comp", editable = true }
+reki = { path = "../reki", editable = true }
