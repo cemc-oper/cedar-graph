@@ -5,7 +5,7 @@
 ![GitHub License](https://img.shields.io/github/license/cemc-oper/cedar-graph)
 ![GitHub Action Workflow Status](https://github.com/cemc-oper/cedar-graph/actions/workflows/ci.yaml/badge.svg)
 
-A plotting example package using [cedarkit-maps](https://github.com/cemc-oper/cedarkit-maps).
+A plotting example package using [cedarkit-plots](https://github.com/cemc-oper/cedarkit-plots).
 
 ## Install
 
@@ -43,7 +43,7 @@ Draw wind speed contour fill plot for 10m wind using CMA-MESO GRIB2 data.
 
 ```py
 from cedar_graph.quickplot import quick_plot
-from cedarkit.maps.util import AreaRange
+from cedarkit.plots.types import AreaRange
 
 plot_type = "cn.wind_10m.default"
 plot_settings = dict(

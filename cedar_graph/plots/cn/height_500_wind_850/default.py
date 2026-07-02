@@ -10,10 +10,10 @@ import matplotlib.colors as mcolors
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values
 
-from cedarkit.maps.style import ContourStyle, ContourLabelStyle, BarbStyle
-from cedarkit.maps.chart import Panel
-from cedarkit.maps.domains import EastAsiaMapTemplate, CnAreaMapTemplate
-from cedarkit.maps.util import AreaRange
+from cedarkit.plots.style import ContourStyle, ContourLabelStyle, BarbStyle
+from cedarkit.plots.chart import Panel
+from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
+from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader

@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.maps.style import ContourStyle, BarbStyle
-from cedarkit.maps.chart import Panel
-from cedarkit.maps.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.maps.colormap import get_ncl_colormap
-from cedarkit.maps.util import AreaRange
+from cedarkit.plots.style import ContourStyle, BarbStyle
+from cedarkit.plots.chart import Panel
+from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
+from cedarkit.plots.colormap import get_ncl_colormap
+from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
 from cedar_graph.data import DataLoader
