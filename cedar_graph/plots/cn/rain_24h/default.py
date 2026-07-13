@@ -41,14 +41,12 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         interval: pd.Timedelta = pd.Timedelta(hours=24),
-        **kwargs
 ) -> PlotData:
     plot_logger.debug("loading apcp for current forecast time...")
     field_apcp = data_loader.load(
         apcp_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     previous_forecast_time = forecast_time - interval
     plot_logger.debug("loading apcp for current previous time...")
@@ -56,7 +54,6 @@ def load_data(
         apcp_info,
         start_time=start_time,
         forecast_time=previous_forecast_time,
-        **kwargs,
     )
     # raw data -> plot data
     plot_logger.debug("calculating...")

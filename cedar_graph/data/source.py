@@ -1,5 +1,4 @@
 from pathlib import Path
-from copy import deepcopy
 from typing import Union, Optional, Callable
 from abc import ABC, abstractmethod
 
@@ -25,7 +24,6 @@ class DataSource(ABC):
             field_info: FieldInfo,
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
-            **kwargs,
     ) -> Optional[xr.DataArray]:
         """
         Retrieve field from data source.
@@ -118,9 +116,19 @@ class LocalDataSource(DataSource):
     use embedded config files in reki by default.
     For other data source, please set ``file_path_func`` when object created.
     """
-    def __init__(self, system_name: str, file_path_func: Optional[Callable] = None):
+    def __init__(
+            self,
+            system_name: str,
+            data_class: str = "od",
+            storage_base: Optional[str] = None,
+            file_path_func: Optional[Callable] = None,
+            data_source_kwargs: Optional[dict] = None,
+    ):
         super().__init__()
         self.system_name = system_name
+        self.data_class = data_class
+        self.storage_base = storage_base
+        self.data_source_kwargs = data_source_kwargs or {}
         if file_path_func is None:
             self.find_path_func = get_file_path
         else:
@@ -131,7 +139,6 @@ class LocalDataSource(DataSource):
             field_info: FieldInfo,
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
-            **kwargs,
     ) -> Optional[xr.DataArray]:
         """
         Find the local file path using ``find_path_func()``,
@@ -142,24 +149,19 @@ class LocalDataSource(DataSource):
         field_info
         start_time
         forecast_time
-        kwargs
-            other keyword arguments passed to ``find_path_func``
 
         Returns
         -------
         xr.DataArray or None
             field if found, None if not.
         """
-        d = deepcopy(kwargs)
-        d.pop("system_name", None)
-        d.pop("start_time", None)
-        d.pop("forecast_time", None)
-
         file_path = self.find_path_func(
             system_name=self.system_name,
             start_time=start_time,
             forecast_time=forecast_time,
-            **d,
+            data_class=self.data_class,
+            storage_base=self.storage_base,
+            **self.data_source_kwargs,
         )
         field = get_field_from_file(field_info=field_info, file_path=file_path)
         return field

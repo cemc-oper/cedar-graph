@@ -44,7 +44,6 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         interval: pd.Timedelta,
-        **kwargs,
 ) -> PlotData:
     wind_level = 10
     wind_level_type = "heightAboveGround"
@@ -62,21 +61,18 @@ def load_data(
         apcp_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug("loading u 10m...")
     field_u_10m = data_loader.load(
         u_10m_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug("loading v 10m...")
     field_v_10m = data_loader.load(
         v_10m_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     previous_forecast_time = forecast_time - interval
 
@@ -85,7 +81,6 @@ def load_data(
         apcp_info,
         start_time=start_time,
         forecast_time=previous_forecast_time,
-        **kwargs,
     )
     # raw data -> plot data
     plot_logger.debug("calculating...")

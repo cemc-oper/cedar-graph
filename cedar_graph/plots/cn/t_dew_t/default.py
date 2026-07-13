@@ -47,7 +47,6 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         level: float,
-        **kwargs
 ) -> PlotData:
     plot_logger.debug(f"loading t {level}hPa...")
     t_level_info = deepcopy(t_info)
@@ -57,7 +56,6 @@ def load_data(
         field_info=t_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug(f"loading dpt {level}hPa...")
     dew_t_level_info = deepcopy(dew_t_info)
@@ -67,7 +65,6 @@ def load_data(
         field_info=dew_t_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug("calculating...")
     field_t_dew_t_diff = field_t - field_dew_t

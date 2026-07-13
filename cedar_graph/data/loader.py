@@ -24,7 +24,6 @@ class DataLoader:
             field_info: FieldInfo,
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
-            **kwargs,
     ) -> Optional[xr.DataArray]:
         """
         Load field from some ``DataSource``.
@@ -44,6 +43,5 @@ class DataLoader:
             field_info=field_info,
             start_time=start_time,
             forecast_time=forecast_time,
-            **kwargs,
         )
         return field

@@ -51,7 +51,6 @@ def load_data(
         forecast_time: pd.Timedelta,
         div_level: float,
         wind_level: float,
-        **kwargs
 ) -> PlotData:
     # data loader -> data field
     plot_logger.debug(f"loading wind {wind_level}hPa...")
@@ -63,7 +62,6 @@ def load_data(
         field_info=u_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     v_level_info = deepcopy(v_info)
     v_level_info.level_type = "pl"
@@ -72,7 +70,6 @@ def load_data(
         field_info=v_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug(f"loading div {div_level}hPa...")
     div_level_info = deepcopy(div_info)
@@ -82,7 +79,6 @@ def load_data(
         field_info=div_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     # data field -> plot data
     plot_logger.debug("calculating...")

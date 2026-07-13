@@ -41,7 +41,6 @@ def load_data(
         data_loader: DataLoader,
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
-        **kwargs
 ) -> PlotData:
     # data file -> data field
     plot_logger.debug("loading t 2m...")
@@ -49,7 +48,6 @@ def load_data(
         field_info=rh_2m_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     # data field -> plot data
 

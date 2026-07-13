@@ -42,7 +42,7 @@ class PlotData:
 
 
 def load_data(
-        data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta, **kwargs
+        data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta,
 ) -> PlotData:
     # data loader -> data field
     plot_logger.debug("loading height 500hPa...")
@@ -53,14 +53,12 @@ def load_data(
         field_info=hgt_500_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug("loading mslp...")
     field_mslp = data_loader.load(
         field_info=mslp_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     # data field -> plot data
     plot_logger.debug("calculating...")

@@ -45,7 +45,6 @@ class MockDataSource(DataSource):
             field_info: FieldInfo,
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
-            **kwargs,
     ) -> xr.DataArray:
         """
         Generate a synthetic field based on field_info.name.

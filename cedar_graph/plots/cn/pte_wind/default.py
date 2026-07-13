@@ -48,7 +48,6 @@ def load_data(
         forecast_time: pd.Timedelta,
         wind_level: float,
         pte_levels: tuple[float, float],
-        **kwargs,
 ) -> PlotData:
     first_pte_level = pte_levels[0]
     second_pte_level = pte_levels[1]
@@ -61,7 +60,6 @@ def load_data(
         field_info=first_pte_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug(f"loading pte {second_pte_level}hPa...")
     second_pte_info = deepcopy(pte_info)
@@ -71,7 +69,6 @@ def load_data(
         field_info=second_pte_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug(f"loading u {wind_level}hPa...")
     u_level_info = deepcopy(u_info)
@@ -81,7 +78,6 @@ def load_data(
         field_info=u_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug(f"loading u {wind_level}hPa...")
     v_level_info = deepcopy(v_info)
@@ -91,7 +87,6 @@ def load_data(
         field_info=v_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug("calculating...")
     field_pte = field_first_pte - field_second_pte

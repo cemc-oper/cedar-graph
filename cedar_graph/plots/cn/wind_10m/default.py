@@ -41,7 +41,6 @@ class PlotData:
 
 def load_data(
         data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta,
-        **kwargs
 ) -> PlotData:
     # data file -> data field
     plot_logger.debug("loading u 10m...")
@@ -52,7 +51,6 @@ def load_data(
         field_info=u_10m_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug("loading v 10m...")
     v_10m_info = deepcopy(v_info)
@@ -62,7 +60,6 @@ def load_data(
         field_info=v_10m_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     # data field -> plot data
     plot_logger.debug("calculating...")

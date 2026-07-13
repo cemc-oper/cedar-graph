@@ -46,7 +46,6 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         level: float,
-        **kwargs,
 ) -> PlotData:
     plot_logger.debug(f"loading qv_div {level}hPa...")
     qv_div_level_info = deepcopy(qv_div_info)
@@ -56,7 +55,6 @@ def load_data(
         field_info=qv_div_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
     )
     plot_logger.debug("calculating...")
     field_qv_div = field_qv_div * 10000000.0
