@@ -49,8 +49,8 @@ def load_data(
         field_info=rh_2m_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
-
     # data field -> plot data
 
     plot_logger.debug("loading done")

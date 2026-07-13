@@ -57,8 +57,8 @@ def load_data(
         field_info=t_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
-
     plot_logger.debug(f"loading dpt {level}hPa...")
     dew_t_level_info = deepcopy(dew_t_info)
     dew_t_level_info.level_type = "pl"
@@ -67,8 +67,8 @@ def load_data(
         field_info=dew_t_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
-
     plot_logger.debug("calculating...")
     field_t_dew_t_diff = field_t - field_dew_t
     field_t_dew_t_diff = apply_to_xarray_values(field_t_dew_t_diff, lambda x: smth9(x, 0.5, 0.25, True))

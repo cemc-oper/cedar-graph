@@ -56,8 +56,8 @@ def load_data(
         field_info=qv_div_level_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
-
     plot_logger.debug("calculating...")
     field_qv_div = field_qv_div * 10000000.0
     field_qv_div = apply_to_xarray_values(field_qv_div, lambda x: smth9(x, 0.5, -0.25, False))

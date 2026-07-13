@@ -48,16 +48,16 @@ def load_data(
         apcp_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
-
     previous_forecast_time = forecast_time - interval
     plot_logger.debug("loading apcp for current previous time...")
     previous_field_apcp = data_loader.load(
         apcp_info,
         start_time=start_time,
         forecast_time=previous_forecast_time,
+        **kwargs,
     )
-
     # raw data -> plot data
     plot_logger.debug("calculating...")
     total_field_rain = field_apcp - previous_field_apcp

@@ -64,8 +64,8 @@ def load_data(
         field_info=level_vwsh_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
-
     plot_logger.debug("calculating...")
     vwsh_field = apply_to_xarray_values(vwsh_field, lambda x: smth9(x, 0.5, -0.25, False))
     vwsh_field = apply_to_xarray_values(vwsh_field, lambda x: smth9(x, 0.5, -0.25, False))

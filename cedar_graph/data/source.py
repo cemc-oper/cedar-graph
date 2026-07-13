@@ -1,4 +1,5 @@
 from pathlib import Path
+from copy import deepcopy
 from typing import Union, Optional, Callable
 from abc import ABC, abstractmethod
 
@@ -20,8 +21,12 @@ class DataSource(ABC):
 
     @abstractmethod
     def retrieve(
-            self, field_info: FieldInfo, start_time: pd.Timestamp, forecast_time: pd.Timedelta
-    ) -> xr.DataArray or None:
+            self,
+            field_info: FieldInfo,
+            start_time: pd.Timestamp,
+            forecast_time: pd.Timedelta,
+            **kwargs,
+    ) -> Optional[xr.DataArray]:
         """
         Retrieve field from data source.
 
@@ -67,16 +72,17 @@ def get_field_from_file(field_info: FieldInfo, file_path: Union[str, Path]) -> O
 
 
 data_mapper = {
-    "CMA-MESO": "cma_meso_3km",
     "CMA-GFS": "cma_gfs_gmf",
-    "CMA-TYM": "cma_tym",
     "CMA-GEPS": "cma_geps",
-    "CMA-REPS": "cma_reps",
+    "CMA-MESO": "cma_meso_1km",
     "CMA-MESO-1KM": "cma_meso_1km",
+    "CMA-MESO-3KM": "cma_meso_3km",
+    "CMA-REPS": "cma_reps",
+    "CMA-TYM": "cma_tym",
 }
 
 
-def get_file_path(system_name, start_time, forecast_time, **kwargs) -> Union[str, Path]:
+def get_file_path(system_name: str, start_time, forecast_time, **kwargs) -> Union[str, Path]:
     """
     Get file path using embedded system config files for CEMC systems.
 
@@ -126,7 +132,7 @@ class LocalDataSource(DataSource):
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
             **kwargs,
-    ) -> xr.DataArray or None:
+    ) -> Optional[xr.DataArray]:
         """
         Find the local file path using ``find_path_func()``,
         and load the field using  ``get_field_from_file()``
@@ -144,11 +150,16 @@ class LocalDataSource(DataSource):
         xr.DataArray or None
             field if found, None if not.
         """
+        d = deepcopy(kwargs)
+        d.pop("system_name", None)
+        d.pop("start_time", None)
+        d.pop("forecast_time", None)
+
         file_path = self.find_path_func(
             system_name=self.system_name,
             start_time=start_time,
             forecast_time=forecast_time,
-            **kwargs,
+            **d,
         )
         field = get_field_from_file(field_info=field_info, file_path=file_path)
         return field

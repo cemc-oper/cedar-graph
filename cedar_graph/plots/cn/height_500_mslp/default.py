@@ -52,16 +52,16 @@ def load_data(
     field_h_500 = data_loader.load(
         field_info=hgt_500_info,
         start_time=start_time,
-        forecast_time=forecast_time
+        forecast_time=forecast_time,
+        **kwargs,
     )
-
     plot_logger.debug("loading mslp...")
     field_mslp = data_loader.load(
         field_info=mslp_info,
         start_time=start_time,
-        forecast_time=forecast_time
+        forecast_time=forecast_time,
+        **kwargs,
     )
-
     # data field -> plot data
     plot_logger.debug("calculating...")
     # 单位转换

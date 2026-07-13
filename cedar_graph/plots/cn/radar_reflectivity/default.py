@@ -48,9 +48,9 @@ def load_data(
     cr_field = data_loader.load(
         field_info=cr_info,
         start_time=start_time,
-        forecast_time=forecast_time
+        forecast_time=forecast_time,
+        **kwargs,
     )
-
     # data field -> plot data
     plot_logger.debug("calculating...")
     cr_field = apply_to_xarray_values(cr_field, lambda x: smth9(x, 0.5, -0.25, False))

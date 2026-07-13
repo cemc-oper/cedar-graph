@@ -101,6 +101,7 @@ def load_data(
         field_info=bli_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
 
     plot_logger.debug(f"loading u {wind_level}hPa...")
@@ -110,7 +111,8 @@ def load_data(
     field_u = data_loader.load(
         field_info=u_level_info,
         start_time=start_time,
-        forecast_time=forecast_time
+        forecast_time=forecast_time,
+        **kwargs,
     )
 
     plot_logger.debug(f"loading v {wind_level}hPa...")
@@ -120,7 +122,8 @@ def load_data(
     field_v = data_loader.load(
         field_info=v_level_info,
         start_time=start_time,
-        forecast_time=forecast_time
+        forecast_time=forecast_time,
+        **kwargs,
     )
     plot_logger.debug(f"loading done")
 

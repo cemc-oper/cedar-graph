@@ -49,8 +49,8 @@ def load_data(
         field_info=t_2m_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
-
     # data field -> plot data
     plot_logger.debug("calculating...")
     t_2m_field = t_2m_field - 273.15

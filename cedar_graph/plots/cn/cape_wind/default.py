@@ -52,8 +52,8 @@ def load_data(
         field_info=cape_info,
         start_time=start_time,
         forecast_time=forecast_time,
+        **kwargs,
     )
-
     plot_logger.debug(f"loading u {wind_level}hPa...")
     u_level_info = deepcopy(u_info)
     u_level_info.level_type = "pl"
@@ -61,9 +61,9 @@ def load_data(
     field_u = data_loader.load(
         field_info=u_level_info,
         start_time=start_time,
-        forecast_time=forecast_time
+        forecast_time=forecast_time,
+        **kwargs,
     )
-
     plot_logger.debug(f"loading u {wind_level}hPa...")
     v_level_info = deepcopy(v_info)
     v_level_info.level_type = "pl"
@@ -71,9 +71,9 @@ def load_data(
     field_v = data_loader.load(
         field_info=v_level_info,
         start_time=start_time,
-        forecast_time=forecast_time
+        forecast_time=forecast_time,
+        **kwargs,
     )
-
     plot_logger.debug("loading done")
 
     return PlotData(
