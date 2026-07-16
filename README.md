@@ -1,5 +1,6 @@
 # cedar-graph
 
+![Maturity-Sandbox](https://img.shields.io/badge/Maturity-Sandbox-F9D71C)
 ![GitHub Release](https://img.shields.io/github/v/release/cemc-oper/cedar-graph)
 ![PyPI - Version](https://img.shields.io/pypi/v/cedar-graph)
 ![GitHub License](https://img.shields.io/github/license/cemc-oper/cedar-graph)
@@ -133,6 +134,6 @@ panel.show()
 
 ## LICENSE
 
-Copyright &copy; 2024, developers at cemc-oper.
+Copyright &copy; 2024-2026, developers at cemc-oper.
 
 `cedar-graph` is licensed under [Apache License V2.0](./LICENSE)
