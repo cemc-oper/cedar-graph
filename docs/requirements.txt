@@ -1,0 +1,11 @@
+# Pinned via the [docs] extras in pyproject.toml. Listed here so that
+# Read the Docs can install the docs build environment without first
+# building the project. Keep in sync with pyproject.toml.
+sphinx>=7.3
+sphinx-book-theme>=1.1
+myst-nb>=1.1
+sphinx-copybutton>=0.5
+sphinx-design>=0.6
+linkify-it-py>=2.0
+ipykernel>=6.29
+matplotlib>=3.8
