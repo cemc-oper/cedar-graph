@@ -44,7 +44,6 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         interval: pd.Timedelta,
-        **kwargs,
 ) -> PlotData:
     wind_level = 10
     wind_level_type = "heightAboveGround"
@@ -63,7 +62,6 @@ def load_data(
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     plot_logger.debug("loading u 10m...")
     field_u_10m = data_loader.load(
         u_10m_info,
@@ -76,7 +74,6 @@ def load_data(
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     previous_forecast_time = forecast_time - interval
 
     plot_logger.debug("loading apcp for previous forecast time...")
@@ -85,7 +82,6 @@ def load_data(
         start_time=start_time,
         forecast_time=previous_forecast_time,
     )
-
     # raw data -> plot data
     plot_logger.debug("calculating...")
     total_field_rain = field_apcp - previous_field_apcp
@@ -126,7 +122,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     elif interval == pd.Timedelta(hours=3):
         map_colors = [
             "White",
-            "DarkOliveGreen3",
+            "paleGreen2",
             "forestgreen",
             "deepSkyBlue",
             "Blue",
@@ -138,7 +134,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     elif interval == pd.Timedelta(hours=6):
         map_colors = [
             "White",
-            "DarkOliveGreen3",
+            "paleGreen2",
             "forestgreen",
             "deepSkyBlue",
             "Blue",
@@ -149,7 +145,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     elif interval == pd.Timedelta(hours=12):
         map_colors = [
             "White",
-            "DarkOliveGreen3",
+            "paleGreen2",
             "forestgreen",
             "deepSkyBlue",
             "Blue",
@@ -162,7 +158,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
         map_colors = [
                 "transparent",
                 "White",
-                "DarkOliveGreen3",
+                "paleGreen2",
                 "forestgreen",
                 "deepSkyBlue",
 	    		"Blue",

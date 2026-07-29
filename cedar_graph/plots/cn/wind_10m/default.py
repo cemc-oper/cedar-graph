@@ -41,7 +41,6 @@ class PlotData:
 
 def load_data(
         data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta,
-        **kwargs
 ) -> PlotData:
     # data file -> data field
     plot_logger.debug("loading u 10m...")
@@ -53,7 +52,6 @@ def load_data(
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     plot_logger.debug("loading v 10m...")
     v_10m_info = deepcopy(v_info)
     v_10m_info.level_type = "heightAboveGround"
@@ -63,7 +61,6 @@ def load_data(
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     # data field -> plot data
     plot_logger.debug("calculating...")
     field_u_10m = field_u_10m * 2.5

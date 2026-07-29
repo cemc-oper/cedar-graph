@@ -1,6 +1,7 @@
 import importlib
+import inspect
 import types
-from typing import Union, Callable, Any
+from typing import Union, Callable, Any, Optional
 from dataclasses import dataclass, fields
 
 import pandas as pd
@@ -22,7 +23,10 @@ def quick_plot(
         system_name: str,
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
-        **kwargs
+        data_class: str = "od",
+        storage_base: Optional[str] = None,
+        data_source_kwargs: Optional[dict[str, Any]] = None,
+        **plot_kwargs,
 ):
     """
     draw the plot and display it
@@ -42,19 +46,34 @@ def quick_plot(
         start time, such as YYYY-MM-DD HH:00:00
     forecast_time
         forecast time, such as 24h
-    kwargs
-        other parameters passed to ``show_plot``'s ``plot_settings`` param.
+    data_class
+        data class passed to reki data finder, default is "od".
+    storage_base
+        storage base path passed to reki data finder.
+    data_source_kwargs
+        other keyword arguments passed to reki data finder.
+    plot_kwargs
+        other plot-specific parameters, such as ``area_range``, ``interval``.
     """
     plot_settings = dict(
         system_name=system_name,
         start_time=start_time,
         forecast_time=forecast_time,
-        **kwargs,
+        **plot_kwargs,
     )
-    show_plot(plot_type=plot_type, plot_settings=plot_settings)
+    data_source_config = dict(
+        data_class=data_class,
+        storage_base=storage_base,
+        **(data_source_kwargs or {}),
+    )
+    show_plot(
+        plot_type=plot_type,
+        plot_settings=plot_settings,
+        data_source_config=data_source_config,
+    )
 
 
-def show_plot(plot_type: str, plot_settings: dict):
+def show_plot(plot_type: str, plot_settings: dict, data_source_config: dict):
     plot_module = get_plot_module(plot_type=plot_type)
     metadata_class = Metadata
     metadata = create_metadata(
@@ -63,11 +82,16 @@ def show_plot(plot_type: str, plot_settings: dict):
         processor_map=item_processor_map
     )
 
-    load_data_func = plot_module.load_data
+    data_source = create_data_source(
+        system_name=metadata.system_name,
+        data_source_config=data_source_config,
+    )
+
+    # data source -> data field
     plot_data = load(
         metadata=metadata,
-        load_data_func=load_data_func,
-        create_data_source_func=create_data_source,
+        load_data_func=plot_module.load_data,
+        data_source=data_source,
     )
 
     # field -> plot
@@ -83,18 +107,23 @@ def show_plot(plot_type: str, plot_settings: dict):
     panel.show()
 
 
-def load(metadata, load_data_func: Callable, create_data_source_func: Callable):
-    # system -> data file
-    data_source = create_data_source_func(metadata=metadata)
+def load(metadata, load_data_func: Callable, data_source: DataSource):
     data_loader = DataLoader(data_source=data_source)
 
-    plot_data = load_data_func(data_loader=data_loader, **metadata.__dict__)
+    load_data_params = inspect.signature(load_data_func).parameters
+    load_data_kwargs = {
+        k: v for k, v in metadata.__dict__.items()
+        if k in load_data_params
+    }
+    plot_data = load_data_func(
+        data_loader=data_loader,
+        **load_data_kwargs,
+    )
     return plot_data
 
 
-def create_data_source(metadata) -> DataSource:
-    system_name = metadata.system_name
-    data_source = LocalDataSource(system_name=system_name)
+def create_data_source(system_name: str, data_source_config: dict) -> DataSource:
+    data_source = LocalDataSource(system_name=system_name, **data_source_config)
     return data_source
 
 

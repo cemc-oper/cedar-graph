@@ -43,7 +43,6 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         interval: pd.Timedelta = pd.Timedelta(hours=24),
-        **kwargs,
 ) -> PlotData:
     plot_logger.debug("loading apcp for current forecast time...")
     field_apcp = data_loader.load(
@@ -51,14 +50,12 @@ def load_data(
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     plot_logger.debug("loading asnow for current forecast time...")
     field_asnow = data_loader.load(
         asnow_info,
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     previous_forecast_time = forecast_time - interval
 
     plot_logger.debug("loading apcp for previous forecast time...")
@@ -67,14 +64,12 @@ def load_data(
         start_time=start_time,
         forecast_time=previous_forecast_time,
     )
-
     plot_logger.debug("loading asnow for previous forecast time...")
     previous_field_asnow = data_loader.load(
         asnow_info,
         start_time=start_time,
         forecast_time=previous_forecast_time,
     )
-
     # raw data -> plot data
     plot_logger.debug("calculating...")
     field_total_rain = field_apcp - previous_field_apcp

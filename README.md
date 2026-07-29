@@ -1,5 +1,6 @@
 # cedar-graph
 
+![Maturity-Sandbox](https://img.shields.io/badge/Maturity-Sandbox-F9D71C)
 ![GitHub Release](https://img.shields.io/github/v/release/cemc-oper/cedar-graph)
 ![PyPI - Version](https://img.shields.io/pypi/v/cedar-graph)
 ![GitHub License](https://img.shields.io/github/license/cemc-oper/cedar-graph)
@@ -120,7 +121,7 @@ panel.show()
 |           | k_wind              | K Index + Wind                                                                         | K指数+风场                    |
 |           | cin_wind            | CIN + Wind                                                                             | CIN+风场                    |
 |           | cape_wind           | CAPE + Wind                                                                            | CAPE+风场                   |
-|           | bli_wind            | Best lifted index + Wind                                                               | 最优抬升指数 + Wind             |
+|           | bli_wind            | Best lifted index + Wind                                                               | 最优抬升指数 + 风场               |
 |           | pte_wind            | Difference in pseudo-equivalent potential temperature between 500hPa and 850hPa + Wind | 500hPa与850hPa假相当位温之差+风场   |
 |           | qv_div              | Moisture flux divergence                                                               | 水汽通量散度                    |
 |           | shr                 | Vertical wind shear (0-1km/0-3km/0-6km)                                                | 垂直风切变 (0-1km/0-3km/0-6km) |
@@ -133,6 +134,6 @@ panel.show()
 
 ## LICENSE
 
-Copyright &copy; 2024, developers at cemc-oper.
+Copyright &copy; 2024-2026, developers at cemc-oper.
 
 `cedar-graph` is licensed under [Apache License V2.0](./LICENSE)

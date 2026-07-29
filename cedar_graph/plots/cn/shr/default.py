@@ -51,7 +51,6 @@ def load_data(
         forecast_time: pd.Timedelta,
         first_level: float,
         second_level: float = 0,
-        **kwargs,
 ) -> PlotData:
     plot_logger.debug(f"loading vwsh {first_level}-{second_level}m...")
     level_vwsh_info = deepcopy(vwsh_info)
@@ -65,7 +64,6 @@ def load_data(
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     plot_logger.debug("calculating...")
     vwsh_field = apply_to_xarray_values(vwsh_field, lambda x: smth9(x, 0.5, -0.25, False))
     vwsh_field = apply_to_xarray_values(vwsh_field, lambda x: smth9(x, 0.5, -0.25, False))

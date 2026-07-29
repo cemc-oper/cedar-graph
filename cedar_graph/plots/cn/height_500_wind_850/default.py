@@ -42,7 +42,8 @@ class PlotData:
     field_wind_speed_850: xr.DataArray
 
 
-def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta, **kwargs) -> PlotData:
+def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: pd.Timedelta,
+) -> PlotData:
     # data file -> data field
     plot_logger.debug("loading height 500hPa...")
     hgt_500_info = deepcopy(hgt_info)
@@ -53,7 +54,6 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     plot_logger.debug("loading u 850hPa...")
     u_850_info = deepcopy(u_info)
     u_850_info.level_type = "pl"
@@ -63,7 +63,6 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     plot_logger.debug("loading v 850hPa...")
     v_850_info = deepcopy(v_info)
     v_850_info.level_type = "pl"
@@ -73,7 +72,6 @@ def load_data(data_loader: DataLoader, start_time: pd.Timestamp, forecast_time: 
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     # data field -> plot data
     plot_logger.debug("calculating...")
     # 单位转换

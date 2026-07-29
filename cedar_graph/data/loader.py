@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pandas as pd
 import xarray as xr
 
@@ -22,7 +24,7 @@ class DataLoader:
             field_info: FieldInfo,
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
-    ) -> xr.DataArray or None:
+    ) -> Optional[xr.DataArray]:
         """
         Load field from some ``DataSource``.
 

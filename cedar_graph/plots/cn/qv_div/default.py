@@ -46,7 +46,6 @@ def load_data(
         start_time: pd.Timestamp,
         forecast_time: pd.Timedelta,
         level: float,
-        **kwargs,
 ) -> PlotData:
     plot_logger.debug(f"loading qv_div {level}hPa...")
     qv_div_level_info = deepcopy(qv_div_info)
@@ -57,7 +56,6 @@ def load_data(
         start_time=start_time,
         forecast_time=forecast_time,
     )
-
     plot_logger.debug("calculating...")
     field_qv_div = field_qv_div * 10000000.0
     field_qv_div = apply_to_xarray_values(field_qv_div, lambda x: smth9(x, 0.5, -0.25, False))

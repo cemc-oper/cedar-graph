@@ -20,8 +20,11 @@ class DataSource(ABC):
 
     @abstractmethod
     def retrieve(
-            self, field_info: FieldInfo, start_time: pd.Timestamp, forecast_time: pd.Timedelta
-    ) -> xr.DataArray or None:
+            self,
+            field_info: FieldInfo,
+            start_time: pd.Timestamp,
+            forecast_time: pd.Timedelta,
+    ) -> Optional[xr.DataArray]:
         """
         Retrieve field from data source.
 
@@ -67,16 +70,17 @@ def get_field_from_file(field_info: FieldInfo, file_path: Union[str, Path]) -> O
 
 
 data_mapper = {
-    "CMA-MESO": "cma_meso_3km",
     "CMA-GFS": "cma_gfs_gmf",
-    "CMA-TYM": "cma_tym",
     "CMA-GEPS": "cma_geps",
-    "CMA-REPS": "cma_reps",
+    "CMA-MESO": "cma_meso_1km",
     "CMA-MESO-1KM": "cma_meso_1km",
+    "CMA-MESO-3KM": "cma_meso_3km",
+    "CMA-REPS": "cma_reps",
+    "CMA-TYM": "cma_tym",
 }
 
 
-def get_file_path(system_name, start_time, forecast_time, **kwargs) -> Union[str, Path]:
+def get_file_path(system_name: str, start_time, forecast_time, **kwargs) -> Union[str, Path]:
     """
     Get file path using embedded system config files for CEMC systems.
 
@@ -112,9 +116,19 @@ class LocalDataSource(DataSource):
     use embedded config files in reki by default.
     For other data source, please set ``file_path_func`` when object created.
     """
-    def __init__(self, system_name: str, file_path_func: Optional[Callable] = None):
+    def __init__(
+            self,
+            system_name: str,
+            data_class: str = "od",
+            storage_base: Optional[str] = None,
+            file_path_func: Optional[Callable] = None,
+            data_source_kwargs: Optional[dict] = None,
+    ):
         super().__init__()
         self.system_name = system_name
+        self.data_class = data_class
+        self.storage_base = storage_base
+        self.data_source_kwargs = data_source_kwargs or {}
         if file_path_func is None:
             self.find_path_func = get_file_path
         else:
@@ -125,8 +139,7 @@ class LocalDataSource(DataSource):
             field_info: FieldInfo,
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
-            **kwargs,
-    ) -> xr.DataArray or None:
+    ) -> Optional[xr.DataArray]:
         """
         Find the local file path using ``find_path_func()``,
         and load the field using  ``get_field_from_file()``
@@ -136,8 +149,6 @@ class LocalDataSource(DataSource):
         field_info
         start_time
         forecast_time
-        kwargs
-            other keyword arguments passed to ``find_path_func``
 
         Returns
         -------
@@ -148,7 +159,9 @@ class LocalDataSource(DataSource):
             system_name=self.system_name,
             start_time=start_time,
             forecast_time=forecast_time,
-            **kwargs,
+            data_class=self.data_class,
+            storage_base=self.storage_base,
+            **self.data_source_kwargs,
         )
         field = get_field_from_file(field_info=field_info, file_path=file_path)
         return field
