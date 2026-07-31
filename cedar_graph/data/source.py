@@ -5,8 +5,8 @@ from abc import ABC, abstractmethod
 import xarray as xr
 import pandas as pd
 
-from reki.data_finder import find_local_file
-from reki.format.grib.eccodes import load_field_from_file
+import reki
+from reki.sources.local import LocalSource
 
 from .field_info import FieldInfo
 
@@ -59,14 +59,15 @@ def get_field_from_file(field_info: FieldInfo, file_path: Union[str, Path]) -> O
     additional_keys = field_info.additional_keys
     if additional_keys is None:
         additional_keys = dict()
-    field = load_field_from_file(
-        file_path,
+    grib_field = reki.from_source("file", file_path).sel(
         parameter=field_info.parameter.get_parameter(),
         level_type=field_info.level_type,
         level=field_info.level,
         **additional_keys,
-    )
-    return field
+    ).first()
+    if grib_field is None:
+        return None
+    return grib_field.to_xarray()
 
 
 data_mapper = {
@@ -90,7 +91,8 @@ def get_file_path(system_name: str, start_time, forecast_time, **kwargs) -> Unio
     start_time
     forecast_time
     kwargs
-        other keyword arguments passed to ``find_local_file()``
+        other keyword arguments passed to ``LocalSource``
+        (``data_class`` / ``storage_base`` / ...)
 
     Returns
     -------
@@ -98,13 +100,13 @@ def get_file_path(system_name: str, start_time, forecast_time, **kwargs) -> Unio
         file path if found, None if not.
     """
     data_type_system_name = data_mapper[system_name]
-    file_path = find_local_file(
+    source = LocalSource(
         f"{data_type_system_name}/grib2/orig",
         start_time=start_time,
         forecast_time=forecast_time,
         **kwargs,
     )
-    return file_path
+    return source.resolve_path()
 
 
 class LocalDataSource(DataSource):

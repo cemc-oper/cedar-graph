@@ -1,11 +1,9 @@
 from dataclasses import fields
 
-from typing import Optional
-
 import xarray as xr
-import numpy as np
 
 from cedarkit.plots.types import AreaRange
+from reki.operator import extract_region, sample_nearest
 
 from cedar_graph.metadata import BasePlotMetadata
 
@@ -59,7 +57,11 @@ def prepare_data(plot_data, plot_metadata: BasePlotMetadata, total_area: AreaRan
 
 def extract_area(field: xr.DataArray, area: AreaRange) -> xr.DataArray:
     """
-    extract field with area range.
+    extract field with area range, padded by one grid step on each side.
+
+    The padding keeps contour lines complete at the area boundary.
+    Region extraction itself is delegated to
+    ``reki.operator.extract_region``.
 
     Parameters
     ----------
@@ -70,50 +72,12 @@ def extract_area(field: xr.DataArray, area: AreaRange) -> xr.DataArray:
     -------
     xr.DataArray
     """
-    lat_step = field.latitude[1] - field.latitude[0]
-    lon_step = field.longitude[1] - field.longitude[0]
-    longitude_range = slice(area.start_longitude - lon_step, area.end_longitude + lon_step)
-    latitude_range = slice(area.end_latitude - lat_step, area.start_latitude + lat_step)
-    extracted_array = field.sel(
-        longitude=longitude_range,
-        latitude=latitude_range,
+    lat_step = abs(field.latitude.values[1] - field.latitude.values[0])
+    lon_step = abs(field.longitude.values[1] - field.longitude.values[0])
+    return extract_region(
+        field,
+        start_longitude=area.start_longitude - lon_step,
+        end_longitude=area.end_longitude + lon_step,
+        start_latitude=area.start_latitude - lat_step,
+        end_latitude=area.end_latitude + lat_step,
     )
-    return extracted_array
-
-
-def sample_nearest(field: xr.DataArray, longitude_step: float, latitude_step: Optional[float]=None) -> xr.DataArray:
-    """
-    Sample field nearest to longitude and latitude step.
-    If field step is larger, return the original field without any change.
-
-    Parameters
-    ----------
-    field
-    longitude_step
-        target longitude step, unit degree
-    latitude_step
-        target latitude step, unit degree
-
-    Returns
-    -------
-    xr.DataArray
-
-    """
-    if latitude_step is None:
-        latitude_step = longitude_step
-
-    lat = field[field.dims[0]]
-    data_lat_step = abs(lat[0] - lat[1]).values
-    lon = field[field.dims[1]]
-    data_lon_step = abs(lon[0] - lon[1]).values
-
-    lat_ratio = int(np.round(latitude_step / data_lat_step))
-    lat_ratio = 1 if lat_ratio < 1 else lat_ratio
-    lon_ratio = int(np.round(longitude_step / data_lon_step))
-    lon_ratio = 1 if lon_ratio < 1 else lon_ratio
-
-    if lat_ratio == 1 and lon_ratio == 1:
-        return field
-    else:
-        sampled_field = field[::lat_ratio, ::lon_ratio]
-        return sampled_field
