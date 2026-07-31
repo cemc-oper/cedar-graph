@@ -1,0 +1,26 @@
+# 500 hPa 位势高度 + 海平面气压。验证多场加载、smth9 repeat 与 588 highlight。
+# 与原 plots/cn/height_500_mslp/default.py 一致：先单位换算再平滑。
+name: "500 hPa Height(10gpm), Sea Level Pressure(hPa,shadow)"
+domain: { default: east_asia, area: cn_area }
+
+data:
+  h_500:
+    field: h
+    level: { first_level_type: 100, first_level: 500 }   # isobaricInhPa 500
+    transforms:
+      - { op: style_units }                              # dagpm：gpm -> 10gpm（h_500.yml units）
+      - { op: smth9, args: [0.5, 0.25, false], repeat: 4 }
+  psl:
+    field: mslp
+    transforms:
+      - { op: style_units }                              # hPa：Pa -> hPa（psl.yml units）
+      - { op: smth9, args: [0.5, -0.25, false], repeat: 2 }
+
+layers:
+  - field: psl
+    style: psl:cn
+  - field: h_500
+    style: h_500:cn_dagpm
+
+title: { graph_name: "500 hPa Height(10gpm), Sea Level Pressure(hPa,shadow)" }
+colorbar: { layer: 0 }

@@ -1,0 +1,30 @@
+# 10 米风 + 风速。u/v 按业务惯例放大 2.5 倍画风羽；风速由放大后分量
+# 计算再除回（与原 wind_10m 模块一致）。
+name: "10m Wind, 10m Wind Speed(m/s, shadow)"
+domain: { default: east_asia, area: cn_area }
+
+data:
+  u_10m:
+    field: u
+    level: { first_level_type: 103, first_level: 10 }    # heightAboveGround 10m
+    transforms:
+      - { op: unit_scale, args: [2.5] }
+  v_10m:
+    field: v
+    level: { first_level_type: 103, first_level: 10 }
+    transforms:
+      - { op: unit_scale, args: [2.5] }
+  ws_10m:
+    compute: { op: wind_speed, inputs: [u_10m, v_10m] }
+    transforms:
+      - { op: unit_scale, args: [0.4] }                  # / 2.5
+
+layers:
+  - field: ws_10m
+    style: ws_10m
+  - vector: { u: u_10m, v: v_10m }
+    style: wind:cn
+    layer: [0]
+
+title: { graph_name: "10m Wind, 10m Wind Speed(m/s, shadow)" }
+colorbar: { layer: 0 }

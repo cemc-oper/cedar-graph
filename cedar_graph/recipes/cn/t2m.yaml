@@ -1,0 +1,21 @@
+# 2 米温度。运行时按起报月份选择夏/冬色标（样式库 t2m.yml 的两个变体）。
+name: "2m Temperature (C)"
+domain: { default: east_asia, area: cn_area }
+
+data:
+  t2m:
+    field: t2m
+    transforms:
+      - { op: style_units }      # celsius：K -> C（t2m.yml units）
+
+layers:
+  - field: t2m
+    style:
+      select:
+        by: start_time.month
+        cases:
+          "5,6,7,8,9": t2m:cn_summer
+          else: t2m:cn_winter
+
+title: { graph_name: "2m Temperature (C)" }
+colorbar: { layer: 0 }

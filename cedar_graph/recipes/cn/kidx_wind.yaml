@@ -1,0 +1,27 @@
+# K 指数 + 风羽。验证 params 参数化层次（wind_level）、vector 图层与标题模板。
+name: "K index(shadow) {wind_level}hPa Wind(m/s)"
+domain: { default: east_asia, area: cn_area }
+
+params:
+  wind_level: { type: float, required: true }
+
+data:
+  kidx: { field: kidx }
+  u:
+    field: u
+    level: { first_level_type: 100, first_level: "{wind_level}" }
+  v:
+    field: v
+    level: { first_level_type: 100, first_level: "{wind_level}" }
+
+layers:
+  - field: kidx
+    style: kidx:cn_fill
+  - field: kidx
+    style: kidx:cn_line
+  - vector: { u: u, v: v }
+    style: wind:cn
+    layer: [0]
+
+title: { graph_name: "K index(shadow) {wind_level}hPa Wind(m/s)", area_prefix: true }
+colorbar: { layer: 0 }

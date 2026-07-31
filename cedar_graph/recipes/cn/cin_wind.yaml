@@ -1,0 +1,25 @@
+# CIN + 风羽（参数化层次）。
+name: "CIN & {wind_level}hPa Wind(m/s)"
+domain: { default: east_asia, area: cn_area }
+
+params:
+  wind_level: { type: float, required: true }
+
+data:
+  cin: { field: cin }
+  u:
+    field: u
+    level: { first_level_type: 100, first_level: "{wind_level}" }
+  v:
+    field: v
+    level: { first_level_type: 100, first_level: "{wind_level}" }
+
+layers:
+  - field: cin
+    style: cin
+  - vector: { u: u, v: v }
+    style: wind:cn
+    layer: [0]
+
+title: { graph_name: "CIN & {wind_level}hPa Wind(m/s)", area_prefix: true }
+colorbar: { layer: 0 }

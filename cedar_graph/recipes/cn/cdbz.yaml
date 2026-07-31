@@ -1,0 +1,16 @@
+# 雷达组合反射率（smth9 平滑 2 次）。
+name: "Radar Composite Reflectivity(dBZ)"
+domain: { default: east_asia, area: cn_area }
+
+data:
+  cdbz:
+    field: cr
+    transforms:
+      - { op: smth9, args: [0.5, -0.25, false], repeat: 2 }
+
+layers:
+  - field: cdbz
+    style: cdbz
+
+title: { graph_name: "Radar Composite Reflectivity(dBZ)" }
+colorbar: { layer: 0 }

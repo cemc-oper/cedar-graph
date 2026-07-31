@@ -1,5 +1,5 @@
 """
-试点图形（t_2m、height_500_mslp、k_wind）的 PNG 基线对比测试。
+试点及批量转换图形的 PNG 基线对比测试。
 
 基线 PNG 体积较大，不入库，仅用于本地开发期对照：
 CI 环境（``CI`` 环境变量）或基线缺失时自动 skip；
@@ -7,11 +7,14 @@ CI 环境（``CI`` 环境变量）或基线缺失时自动 skip；
 ``tests/mock/baseline/cn/``，已被 gitignore）。
 
 数据来自 ``cedar_graph.testing.MockDataSource``（确定性合成场），
-渲染参数固定，本地可复现。
+渲染参数固定，本地可复现。基线由 Python 图形模块渲染生成，
+``test_recipe_baseline.py`` 用同一批基线验收配方版本。
 """
+import importlib
 import os
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from cedar_graph.data import DataLoader
@@ -22,74 +25,47 @@ from ...image_baseline import assert_image_match
 IN_CI = os.environ.get("CI", "").lower() in ("true", "1", "yes")
 
 
-def _render_t_2m(mock_data_source, start_time, forecast_time, system_name, sample_step, output_path):
-    from cedar_graph.plots.cn.t_2m.default import PlotMetadata, plot, load_data
+def _render_module(module_path, params, mock_data_source, start_time, forecast_time, system_name, sample_step, output_path):
+    plot_module = importlib.import_module(f"cedar_graph.plots.cn.{module_path}.default")
 
     data_loader = DataLoader(data_source=mock_data_source)
-    plot_data = load_data(
+    plot_data = plot_module.load_data(
         data_loader=data_loader,
         start_time=start_time,
         forecast_time=forecast_time,
+        **params,
     )
-    metadata = PlotMetadata(
+    metadata = plot_module.PlotMetadata(
         start_time=start_time,
         forecast_time=forecast_time,
         system_name=system_name,
         sample_step=sample_step,
+        **params,
     )
-    panel = plot(plot_data=plot_data, plot_metadata=metadata)
+    panel = plot_module.plot(plot_data=plot_data, plot_metadata=metadata)
     panel.save(output_path)
 
 
-def _render_height_500_mslp(mock_data_source, start_time, forecast_time, system_name, sample_step, output_path):
-    from cedar_graph.plots.cn.height_500_mslp.default import PlotMetadata, plot, load_data
-
-    data_loader = DataLoader(data_source=mock_data_source)
-    plot_data = load_data(
-        data_loader=data_loader,
-        start_time=start_time,
-        forecast_time=forecast_time,
-    )
-    metadata = PlotMetadata(
-        start_time=start_time,
-        forecast_time=forecast_time,
-        system_name=system_name,
-        sample_step=sample_step,
-    )
-    panel = plot(plot_data=plot_data, plot_metadata=metadata)
-    panel.save(output_path)
-
-
-def _render_k_wind(mock_data_source, start_time, forecast_time, system_name, sample_step, output_path):
-    from cedar_graph.plots.cn.k_wind.default import PlotMetadata, plot, load_data
-
-    wind_level = 850.0
-    data_loader = DataLoader(data_source=mock_data_source)
-    plot_data = load_data(
-        data_loader=data_loader,
-        start_time=start_time,
-        forecast_time=forecast_time,
-        wind_level=wind_level,
-    )
-    metadata = PlotMetadata(
-        start_time=start_time,
-        forecast_time=forecast_time,
-        system_name=system_name,
-        wind_level=wind_level,
-        sample_step=sample_step,
-    )
-    panel = plot(plot_data=plot_data, plot_metadata=metadata)
-    panel.save(output_path)
-
-
-PILOT_PLOTS = {
-    "t_2m": _render_t_2m,
-    "height_500_mslp": _render_height_500_mslp,
-    "k_wind": _render_k_wind,
+#: plot name -> (module path, extra load/plot params)
+#: 覆盖全部 13 个可声明图形（配方转换清单，设计文档 §4.5）。
+BASELINE_PLOTS = {
+    "t_2m": ("t_2m", {}),
+    "height_500_mslp": ("height_500_mslp", {}),
+    "k_wind": ("k_wind", {"wind_level": 850.0}),
+    "rh_2m": ("rh_2m", {}),
+    "radar_reflectivity": ("radar_reflectivity", {}),
+    "height_500_wind_850": ("height_500_wind_850", {}),
+    "bli_wind": ("bli_wind", {"wind_level": 850.0}),
+    "cape_wind": ("cape_wind", {"wind_level": 850.0}),
+    "cin_wind": ("cin_wind", {"wind_level": 850.0}),
+    "wind_10m": ("wind_10m", {}),
+    "rain_24h": ("rain_24h", {}),
+    "rain_wind_10m": ("rain_wind_10m", {"interval": pd.Timedelta(hours=24)}),
+    "prep_24h": ("prep_24h", {}),
 }
 
 
-@pytest.mark.parametrize("plot_name", list(PILOT_PLOTS.keys()))
+@pytest.mark.parametrize("plot_name", list(BASELINE_PLOTS.keys()))
 def test_image_baseline(
         plot_name,
         mock_data_source,
@@ -101,7 +77,7 @@ def test_image_baseline(
         update_baseline,
         tmp_path,
 ):
-    """渲染试点图形并与 PNG 基线对比（本地）或重新生成基线。"""
+    """渲染图形并与 PNG 基线对比（本地）或重新生成基线。"""
     baseline_path = Path(baseline_dir, "cn", f"{plot_name}.png")
 
     if update_baseline:
@@ -117,7 +93,10 @@ def test_image_baseline(
             )
         render_path = Path(tmp_path, f"{plot_name}.png")
 
-    PILOT_PLOTS[plot_name](
+    module_path, params = BASELINE_PLOTS[plot_name]
+    _render_module(
+        module_path,
+        params,
         mock_data_source=mock_data_source,
         start_time=start_time,
         forecast_time=forecast_time,

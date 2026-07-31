@@ -1,0 +1,39 @@
+# 间隔累计降水 + 10 米风羽。降水色标按间隔时段选择（1/3/6/12/24h）；
+# else 落到 24h 色标（原实现对不支持的时段直接报错——评审记录的有意偏差，
+# 引擎要求 select 穷尽）。
+name: "surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h"
+domain: { default: east_asia, area: cn_area }
+
+params:
+  interval: { type: timedelta, required: true }
+
+data:
+  rain:
+    field: apcp
+    transforms:
+      - { op: time_diff, args: ["{interval}"] }
+  u_10m:
+    field: u
+    level: { first_level_type: 103, first_level: 10 }
+  v_10m:
+    field: v
+    level: { first_level_type: 103, first_level: 10 }
+
+layers:
+  - field: rain
+    style:
+      select:
+        by: interval
+        cases:
+          "1": rain:cn_1h
+          "3": rain:cn_3h
+          "6": rain:cn_6h
+          "12": rain:cn_12h
+          "24": rain:cn_24h
+          else: rain:cn_24h
+  - vector: { u: u_10m, v: v_10m }
+    style: wind:cn
+    layer: [0]
+
+title: { graph_name: "surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h" }
+colorbar: { layer: 0 }

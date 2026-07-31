@@ -8,6 +8,7 @@ from cedarkit.plots.engine.loader import (
     Metadata,
     convert_metadata,
     create_metadata,
+    get_plot_definition,
     get_plot_module,
     item_processor_map,
 )
@@ -26,6 +27,9 @@ __all__ = [
 
 #: default base module for plot types, e.g. "cn.t_2m.default".
 BASE_MODULE_NAME = "cedar_graph.plots"
+
+#: recipe package searched before plot modules, e.g. "cn.t2m".
+BASE_RECIPE_NAME = "cedar_graph.recipes"
 
 
 def quick_plot(
@@ -84,7 +88,14 @@ def quick_plot(
 
 
 def show_plot(plot_type: str, plot_settings: dict, data_source_config: dict):
-    plot_module = get_plot_module(plot_type=plot_type, base_module_name=BASE_MODULE_NAME)
+    from cedar_graph.recipes.engine import get_recipe_engine
+
+    plot_module = get_plot_definition(
+        plot_type=plot_type,
+        base_module_name=BASE_MODULE_NAME,
+        recipe_base_module=BASE_RECIPE_NAME,
+        engine=get_recipe_engine(),
+    )
     metadata_class = Metadata
     metadata = create_metadata(
         metadata_class=metadata_class,

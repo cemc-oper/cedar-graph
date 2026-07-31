@@ -1,0 +1,31 @@
+# 500 hPa 高度 + 850 hPa 风与风速。风速由 u/v 经诊断 op wind_speed 计算。
+name: "500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)"
+domain: { default: east_asia, area: cn_area }
+
+data:
+  h_500:
+    field: h
+    level: { first_level_type: 100, first_level: 500 }
+    transforms:
+      - { op: style_units }                              # dagpm（h_500.yml units）
+      - { op: smth9, args: [0.5, 0.25, false], repeat: 2 }
+  u_850:
+    field: u
+    level: { first_level_type: 100, first_level: 850 }
+  v_850:
+    field: v
+    level: { first_level_type: 100, first_level: 850 }
+  ws_850:
+    compute: { op: wind_speed, inputs: [u_850, v_850] }
+
+layers:
+  - field: ws_850
+    style: ws_850
+  - field: h_500
+    style: h_500:cn_ws
+  - vector: { u: u_850, v: v_850 }
+    style: wind:cn
+    layer: [0]
+
+title: { graph_name: "500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)" }
+colorbar: { layer: 0 }

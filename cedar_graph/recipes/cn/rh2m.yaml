@@ -1,0 +1,13 @@
+# 2 米相对湿度。
+name: "2m Relative Humidity(%)"
+domain: { default: east_asia, area: cn_area }
+
+data:
+  rh2m: { field: rh2m }
+
+layers:
+  - field: rh2m
+    style: rh2m
+
+title: { graph_name: "2m Relative Humidity(%)" }
+colorbar: { layer: 0 }

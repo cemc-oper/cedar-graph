@@ -1,0 +1,27 @@
+# 最优抬升指数 + 风羽（参数化层次）。
+name: "BLI(shadow) and {wind_level}hPa Wind(m/s)"
+domain: { default: east_asia, area: cn_area }
+
+params:
+  wind_level: { type: float, required: true }
+
+data:
+  bli: { field: bli }
+  u:
+    field: u
+    level: { first_level_type: 100, first_level: "{wind_level}" }
+  v:
+    field: v
+    level: { first_level_type: 100, first_level: "{wind_level}" }
+
+layers:
+  - field: bli
+    style: bli:cn_fill
+  - field: bli
+    style: bli:cn_line
+  - vector: { u: u, v: v }
+    style: wind:cn
+    layer: [0]
+
+title: { graph_name: "BLI(shadow) and {wind_level}hPa Wind(m/s)", area_prefix: true }
+colorbar: { layer: 0 }

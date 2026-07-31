@@ -1,0 +1,19 @@
+# 24 小时累计降水（时效差分：本时效累计 - 前一时效累计）。
+name: "surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h"
+domain: { default: east_asia, area: cn_area }
+
+params:
+  interval: { type: timedelta, default: 24h }
+
+data:
+  rain:
+    field: apcp
+    transforms:
+      - { op: time_diff, args: ["{interval}"] }
+
+layers:
+  - field: rain
+    style: rain:cn
+
+title: { graph_name: "surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h" }
+colorbar: { layer: 0 }
