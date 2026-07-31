@@ -137,3 +137,6 @@ tests/mock/run_base_dir
 docs/_build/
 docs/jupyter_execute/
 docs/api/_autosummary/
+
+# image baselines are local-only (not committed, regenerated with --update-baseline)
+tests/mock/baseline/

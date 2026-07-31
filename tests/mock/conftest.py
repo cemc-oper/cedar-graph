@@ -19,6 +19,27 @@ from cedar_graph.testing import MockDataSource
 matplotlib.use("Agg")
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--update-baseline",
+        action="store_true",
+        default=False,
+        help="regenerate image baselines instead of comparing against them",
+    )
+
+
+@pytest.fixture(scope="session")
+def update_baseline(request) -> bool:
+    """Whether to regenerate image baselines."""
+    return request.config.getoption("--update-baseline")
+
+
+@pytest.fixture(scope="session")
+def baseline_dir() -> Path:
+    """Directory storing image baseline PNGs."""
+    return Path(__file__).parent.absolute() / "baseline"
+
+
 @pytest.fixture(scope="session")
 def mock_data_source() -> MockDataSource:
     """Session-scoped mock data source."""
