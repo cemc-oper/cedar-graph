@@ -1,15 +1,12 @@
 from dataclasses import dataclass
 from copy import deepcopy
 
-import numpy as np
 import pandas as pd
 import xarray as xr
-import matplotlib.colors as mcolors
 
-from cedarkit.plots.style import ContourStyle, ContourLabelStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedarkit.comp.smooth import smth9
@@ -92,58 +89,11 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata):
     area_range = plot_metadata.area_range
     level = plot_metadata.level
 
-    # 合并色表
-    map_colors = np.array([
-        (255, 0, 255),
-        (77, 77, 77)
-    ], dtype=float) / 255.0
-    ncl_color_map = get_ncl_colormap("testcmap")
-    ncl_colors = ncl_color_map.colors
-    colors = np.concatenate((ncl_colors, map_colors), axis=0)
-    color_map = mcolors.ListedColormap(colors, "plot_colormap")
-
-    t_dew_t_diff_levels = np.array([1, 3, 5, 7, 9, 11, 15, 17, 21, 25, 29, 33])
-
-    color_index = np.array([65, 70, 75, 80, 85, 100, 115, 130, 150, 160, 170, 180, 190]) - 2
-    t_dew_t_diff_colormap = mcolors.ListedColormap(color_map(color_index), "t_dew_t_diff_colormap")
-
-    t_dew_t_diff_style = ContourStyle(
-        colors=t_dew_t_diff_colormap,
-        levels=t_dew_t_diff_levels,
-        fill=True,
-    )
-
-    line_color_index = np.array([65, 70, 201, 80, 85, 100, 115, 130, 150, 160, 170, 180, 190]) - 2
-    t_dew_t_diff_line_colors = mcolors.ListedColormap(color_map(line_color_index), "t_dew_t_diff_line_colormap")
-    t_dev_t_diff_line_widths = np.array([0.1, 0.1, 2.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-    t_dew_t_diff_line_style = ContourStyle(
-        levels=t_dew_t_diff_levels,
-        colors=t_dew_t_diff_line_colors,
-        linewidths=t_dev_t_diff_line_widths,
-    )
-
-    t_levels = np.linspace(start=-80, stop=80, num=81, endpoint=True)
-    t_line_widths = np.where(t_levels == 0, 2.0, 1.0)
-    t_line_colors = []
-    t_lines_color = color_map(30 - 2)
-    for current_level in t_levels:
-        if current_level == 0:
-            t_line_colors.append((0, 0, 0, 0))  # black
-        else:
-            t_line_colors.append(t_lines_color)
-
-    t_line_style = ContourStyle(
-        colors=t_line_colors,
-        levels=t_levels,
-        linewidths=t_line_widths,
-        linestyles="solid",
-        fill=False,
-        label=True,
-        label_style=ContourLabelStyle(
-            colors=t_line_colors,
-            background_color="white",
-        )
-    )
+    # style
+    style_registry = get_default_registry()
+    t_dew_t_diff_style = style_registry.get_style("t_dew_t", "cn_fill")
+    t_dew_t_diff_line_style = style_registry.get_style("t_dew_t", "cn_line")
+    t_line_style = style_registry.get_style("t_dew_t", "cn_t")
 
     # create domain
     if area_range is None:

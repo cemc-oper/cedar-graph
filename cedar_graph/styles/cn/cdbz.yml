@@ -1,0 +1,15 @@
+# 雷达组合反射率（填色）。
+id: cdbz
+criteria:
+  - cemc_name: cdbz
+  - wgrib2_name: CR
+optimal: cn
+
+styles:
+  cn:
+    type: contour
+    levels: { range: [10, 75, 5] }
+    colormap:
+      rgb_table: cn_cr19
+      index: [0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    fill: true

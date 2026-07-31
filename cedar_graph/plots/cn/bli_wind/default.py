@@ -2,14 +2,12 @@ from dataclasses import dataclass
 from typing import Optional
 from copy import deepcopy
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.plots.style import ContourStyle, ContourLabelStyle, BarbStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -154,33 +152,11 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
     area_name = plot_metadata.area_name
 
-    bli_levels = np.array([-48, -42, -36, -30, -24, -18, -12, -6, 0])
-    colormap_index = np.array([20, 19, 18, 16, 14, 12, 10, 8, 6, 4]) - 2
-    bli_colormap = get_ncl_colormap("prcp_3", index=colormap_index)
-
-    bli_style = ContourStyle(
-        colors=bli_colormap,
-        levels=bli_levels,
-        fill=True,
-    )
-    bli_line_style = ContourStyle(
-        colors="black",
-        levels=bli_levels,
-        linewidths=0.5,
-        fill=False,
-        label=True,
-        label_style=ContourLabelStyle(
-            fontsize=7,
-            background_color="white"
-        )
-    )
-
-    barb_style = BarbStyle(
-        barbcolor="black",
-        flagcolor="black",
-        linewidth=0.3,
-        # barb_increments=dict(half=2, full=4, flag=20)
-    )
+    # style
+    style_registry = get_default_registry()
+    bli_style = style_registry.get_style("bli", "cn_fill")
+    bli_line_style = style_registry.get_style("bli", "cn_line")
+    barb_style = style_registry.get_style("wind")
 
     # create domain
     if plot_metadata.area_range is None:

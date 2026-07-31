@@ -3,14 +3,11 @@ from typing import Optional
 
 import xarray as xr
 import pandas as pd
-import numpy as np
-
-import matplotlib.colors as mcolors
 
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values
 
-from cedarkit.plots.style import ContourStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.plots.types import AreaRange
@@ -68,36 +65,8 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_name = plot_metadata.area_name
     area_range = plot_metadata.area_range
 
-    map_colors = np.array([
-        (255, 255, 255),
-        (0, 0, 0),
-        (216, 216, 216),
-        (1, 160, 246),
-        (0, 236, 236),
-        (0, 216, 0),
-        (1, 144, 0),
-        (255, 255, 0),
-        (231, 192, 0),
-        (255, 144, 0),
-        (255, 0, 0),
-        (214, 0, 0),
-        (192, 0, 0),
-        (255, 0, 240),
-        (150, 0, 180),
-        (173, 144, 240),
-        (255, 140, 0),
-        (238, 18, 137),
-        (0, 0, 128)
-    ], dtype=float) / 255
-    colormap = mcolors.ListedColormap(map_colors)
-
-    cr_contour_lev = np.arange(10, 75, 5)
-    cr_color_map = mcolors.ListedColormap(colormap(np.array([0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])))
-    cr_style = ContourStyle(
-        colors=cr_color_map,
-        levels=cr_contour_lev,
-        fill=True,
-    )
+    # style
+    cr_style = get_default_registry().get_style("cdbz")
 
     # create domain
     if plot_metadata.area_range is None:

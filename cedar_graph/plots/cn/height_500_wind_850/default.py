@@ -5,12 +5,11 @@ from copy import deepcopy
 import xarray as xr
 import pandas as pd
 import numpy as np
-import matplotlib.colors as mcolors
 
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values
 
-from cedarkit.plots.style import ContourStyle, ContourLabelStyle, BarbStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.plots.types import AreaRange
@@ -99,54 +98,11 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
     area_name = plot_metadata.area_name
 
-    map_colors = np.array([
-        (255, 255, 255),
-        (0, 0, 0),
-        (255, 255, 255),
-        (0, 200, 200),
-        (0, 210, 140),
-        (0, 220, 0),
-        (160, 230, 50),
-        (230, 220, 50),
-        (230, 175, 45),
-        (240, 130, 40),
-        (250, 60, 60),
-        (240, 0, 130),
-        (0, 0, 255),
-        (255, 140, 0),
-        (238, 18, 137)
-    ], dtype=float) / 255
-    colormap = mcolors.ListedColormap(map_colors)
-
-    wind_speed_colormap = mcolors.ListedColormap(colormap(np.array([2, 4, 5, 6, 7, 9, 10, 11])))
-    wind_speed_contour_lev = np.array([12, 15, 18, 21, 24, 27, 30], dtype=int)
-    wind_speed_style = ContourStyle(
-        colors=wind_speed_colormap,
-        levels=wind_speed_contour_lev,
-        fill=True,
-    )
-
-    h_contour_lev = np.linspace(500, 588, endpoint=True, num=23)
-    h_linewidths = np.where(h_contour_lev == 588, 1.4, 0.7)
-    hgt_style = ContourStyle(
-        levels=h_contour_lev,
-        colors=mcolors.ListedColormap(colormap(np.full(len(h_contour_lev), 12))),
-        linewidths=h_linewidths,
-        label=True,
-        label_style=ContourLabelStyle(
-            manual=False,
-            inline=True,
-            fontsize=7,
-            fmt="{:.0f}".format,
-        )
-    )
-
-    barb_style = BarbStyle(
-        barbcolor="black",
-        flagcolor="black",
-        linewidth=0.3,
-        # barb_increments=dict(half=2, full=4, flag=20)
-    )
+    # style
+    style_registry = get_default_registry()
+    wind_speed_style = style_registry.get_style("ws_850")
+    hgt_style = style_registry.get_style("h_500", "cn_ws")
+    barb_style = style_registry.get_style("wind")
 
     # create domain
     if plot_metadata.area_range is None:

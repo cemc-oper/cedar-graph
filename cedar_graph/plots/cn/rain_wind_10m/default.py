@@ -2,14 +2,12 @@ from dataclasses import dataclass
 from copy import deepcopy
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.plots.style import ContourStyle, BarbStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
-from cedarkit.plots.colormap import generate_colormap_using_ncl_colors
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -104,84 +102,12 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_name = plot_metadata.area_name
 
     # style
-    if interval == pd.Timedelta(hours=1):
-        map_colors = [
-            "White",
-            "DarkOliveGreen1",
-            "DarkOliveGreen3",
-            "forestgreen",
-            "deepSkyBlue",
-            "Blue",
-            "darkgreen",
-            "Magenta",
-            "darkorange",
-            "deeppink4",
-        ]
-        rain_color_map = generate_colormap_using_ncl_colors(map_colors, "rain_1h_colormap")
-        rain_level = np.array([0.1, 1, 2, 4, 6, 8, 10, 20, 50])
-    elif interval == pd.Timedelta(hours=3):
-        map_colors = [
-            "White",
-            "paleGreen2",
-            "forestgreen",
-            "deepSkyBlue",
-            "Blue",
-            "Magenta",
-            "deeppink4"
-        ]
-        rain_color_map = generate_colormap_using_ncl_colors(map_colors, "rain_3h_colormap")
-        rain_level = np.array([0.1, 3, 10, 20, 50, 70])
-    elif interval == pd.Timedelta(hours=6):
-        map_colors = [
-            "White",
-            "paleGreen2",
-            "forestgreen",
-            "deepSkyBlue",
-            "Blue",
-            "Magenta"
-        ]
-        rain_color_map = generate_colormap_using_ncl_colors(map_colors, "rain_6h_colormap")
-        rain_level = np.array([0.1, 4, 13, 25, 60])
-    elif interval == pd.Timedelta(hours=12):
-        map_colors = [
-            "White",
-            "paleGreen2",
-            "forestgreen",
-            "deepSkyBlue",
-            "Blue",
-            "Magenta",
-            "deeppink4",
-        ]
-        rain_color_map = generate_colormap_using_ncl_colors(map_colors, "rain_12h_colormap")
-        rain_level = np.array([0.1, 5, 15, 30, 70, 140])
-    elif interval == pd.Timedelta(hours=24):
-        map_colors = [
-                "transparent",
-                "White",
-                "paleGreen2",
-                "forestgreen",
-                "deepSkyBlue",
-	    		"Blue",
-                "Magenta",
-                "deeppink4",
-            ]
-        rain_color_map = generate_colormap_using_ncl_colors(map_colors, name="rain_24h_colormap")
-        rain_level = np.array([0.1, 10, 25, 50, 100, 200])
-    else:
+    interval_hours = interval / pd.Timedelta(hours=1)
+    if interval_hours not in (1, 3, 6, 12, 24):
         raise ValueError(f"forecast interval is not supported: {interval}")
-
-    rain_style = ContourStyle(
-        colors=rain_color_map,
-        levels=rain_level,
-        fill=True,
-    )
-
-    barb_style = BarbStyle(
-        barbcolor="black",
-        flagcolor="black",
-        linewidth=0.3,
-        # barb_increments=dict(half=2, full=4, flag=20)
-    )
+    style_registry = get_default_registry()
+    rain_style = style_registry.get_style("rain", f"cn_{int(interval_hours)}h")
+    barb_style = style_registry.get_style("wind")
 
     # create domain
     if plot_metadata.area_range is None:

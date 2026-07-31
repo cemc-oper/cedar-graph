@@ -2,14 +2,12 @@ from dataclasses import dataclass
 from typing import Optional
 from copy import deepcopy
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.plots.style import ContourStyle, ContourLabelStyle, BarbStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -88,32 +86,11 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
     wind_level = plot_metadata.wind_level
 
-    k_levels = np.array([20, 25, 30, 35, 40, 45, 50])
-    k_colormap = get_ncl_colormap("WhBlGrYeRe", index=[0, 15, 45, 55, 65, 75, 85, 95, 100])
-
-    k_style = ContourStyle(
-        colors=k_colormap,
-        levels=k_levels,
-        fill=True,
-    )
-    k_line_style = ContourStyle(
-        colors="black",
-        levels=k_levels,
-        linewidths=0.5,
-        fill=False,
-        label=True,
-        label_style=ContourLabelStyle(
-            fontsize=7,
-            background_color="white"
-        )
-    )
-
-    barb_style = BarbStyle(
-        barbcolor="black",
-        flagcolor="black",
-        linewidth=0.3,
-        # barb_increments=dict(half=2, full=4, flag=20)
-    )
+    # style
+    style_registry = get_default_registry()
+    k_style = style_registry.get_style("kidx", "cn_fill")
+    k_line_style = style_registry.get_style("kidx", "cn_line")
+    barb_style = style_registry.get_style("wind")
 
     # create domain
     if area_range is None:

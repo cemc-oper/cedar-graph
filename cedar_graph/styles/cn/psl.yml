@@ -1,0 +1,18 @@
+# 海平面气压（填色）。
+id: psl
+criteria:
+  - cemc_name: psl
+  - eccodes_name: prmsl
+  - wgrib2_name: PRMSL
+    first_level_type: 101   # meanSea
+optimal: cn
+
+styles:
+  cn:
+    type: contour
+    levels: [980, 985, 990, 995, 1000, 1005, 1020, 1025, 1030, 1035, 1040]
+    colormap:
+      rgb_table: cn_hgt20
+      index: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    fill: true
+    units: hPa

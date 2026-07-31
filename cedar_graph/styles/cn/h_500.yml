@@ -1,0 +1,32 @@
+# 500 hPa 位势高度。highlight 展开 588 特征线（加粗、变色）。
+id: h_500
+criteria:
+  - cemc_name: h
+    first_level_type: 100   # isobaricInhPa
+    first_level: 500
+  - eccodes_name: gh
+    first_level_type: 100
+    first_level: 500
+optimal: cn_dagpm
+
+styles:
+  cn_dagpm:                 # 500 hPa 高度场（蓝色线 + 588 黑色特征线）
+    type: contour
+    levels: { linspace: [500, 588, 23] }
+    colormap: { rgb_table: cn_hgt20, index: 14 }
+    label: { inline: true, fontsize: 7, fmt: "{:.0f}", color_index: 15 }
+    highlight:
+      level: 588
+      linewidth: 1.4
+      color_index: 1
+    units: dagpm
+
+  cn_ws:                    # 与 850 hPa 风速叠加时（紫色线，仅加粗 588）
+    type: contour
+    levels: { linspace: [500, 588, 23] }
+    colormap: { rgb_table: cn_hgt20, index: 12 }
+    label: { inline: true, fontsize: 7, fmt: "{:.0f}" }
+    highlight:
+      level: 588
+      linewidth: 1.4
+    units: dagpm

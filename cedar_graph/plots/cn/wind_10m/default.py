@@ -6,9 +6,7 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
-import matplotlib.colors as mcolors
-
-from cedarkit.plots.style import ContourStyle, BarbStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.plots.types import AreaRange
@@ -83,39 +81,9 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
 
     # style
-    map_colors = np.array([
-        (255, 255, 255),
-        (0, 0, 0),
-        (255, 255, 255),
-        (0, 200, 200),
-        (0, 210, 140),
-        (0, 220, 0),
-        (160, 230, 50),
-        (230, 220, 50),
-        (230, 175, 45),
-        (240, 130, 40),
-        (250, 60, 60),
-        (240, 0, 130),
-        (0, 0, 255),
-        (255, 140, 0),
-        (238, 18, 137)
-    ], dtype=float) / 255
-    colormap = mcolors.ListedColormap(map_colors)
-
-    wind_speed_colormap = mcolors.ListedColormap(colormap(np.array([2, 3, 4, 5, 6, 7, 8, 9, 10, 11])))
-    wind_speed_contour_lev = np.array([3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5])
-    wind_speed_style = ContourStyle(
-        colors=wind_speed_colormap,
-        levels=wind_speed_contour_lev,
-        fill=True,
-    )
-
-    barb_style = BarbStyle(
-        barbcolor="black",
-        flagcolor="black",
-        linewidth=0.3,
-        # barb_increments=dict(half=2, full=4, flag=20)
-    )
+    style_registry = get_default_registry()
+    wind_speed_style = style_registry.get_style("ws_10m")
+    barb_style = style_registry.get_style("wind")
 
     # create domain
     if plot_metadata.area_range is None:

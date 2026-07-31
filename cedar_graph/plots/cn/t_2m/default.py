@@ -3,14 +3,10 @@ from typing import Optional
 
 import xarray as xr
 import pandas as pd
-import numpy as np
 
-import matplotlib.colors as mcolors
-
-from cedarkit.plots.style import ContourStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -82,22 +78,12 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
 
     # style
-    color_map = get_ncl_colormap("BlAqGrYeOrReVi200")
-
     month = start_time.month
     if 5 <= month <= 9:
-        t_2m_level = [-12, -8, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44]
-        color_index = np.array([2, 18, 34, 50, 66, 82, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]) - 2
+        variant = "cn_summer"
     else:
-        t_2m_level = [-24, -20, -16, -12, -8, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32]
-        color_index = np.array([2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102, 112, 122, 132, 142, 152]) - 2
-
-    t_2m_color_map = mcolors.ListedColormap(color_map(color_index))
-    t_2m_style = ContourStyle(
-        colors=t_2m_color_map,
-        levels=t_2m_level,
-        fill=True,
-    )
+        variant = "cn_winter"
+    t_2m_style = get_default_registry().get_style("t2m", variant)
 
     # create domain
     if plot_metadata.area_range is None:

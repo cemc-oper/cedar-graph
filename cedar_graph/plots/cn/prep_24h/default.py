@@ -5,11 +5,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.plots.style import ContourStyle, ColorbarStyle
-from cedarkit.plots.colormap import get_ncl_colormap
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
-from cedarkit.plots.colormap import generate_colormap_using_ncl_colors
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -99,45 +97,10 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
 
     # style
-    # 24小时降水常用填充图样式
-    rain_contour_lev = np.array([0.1, 10, 25, 50, 100, 250])
-    rain_color_map = generate_colormap_using_ncl_colors(
-        [
-            "transparent",
-            "PaleGreen2",
-            "ForestGreen",
-            "DeepSkyBlue",
-            "blue1",
-            "magenta1",
-            "DeepPink3",
-            "DarkOrchid4"
-        ],
-        name="rain"
-    )
-    rain_style = ContourStyle(
-        colors=rain_color_map,
-        levels=rain_contour_lev,
-        fill=True,
-        colorbar_style=ColorbarStyle(label="rain")
-    )
-
-    snow_contour_lev = np.array([0.1, 2.5, 5, 10, 20, 30])
-    snow_color_map = get_ncl_colormap("mch_default", index=np.array([0, 7, 6, 5, 4, 3, 1]))
-    snow_style = ContourStyle(
-        colors=snow_color_map,
-        levels=snow_contour_lev,
-        fill=True,
-        colorbar_style=ColorbarStyle(label="snow")
-    )
-
-    rain_snow_contour_lev = np.array([0.1, 10, 25, 50, 100])
-    rain_snow_color_map = get_ncl_colormap("precip_diff_12lev", index=np.array([6, 5, 4, 3, 2, 1]))
-    rain_snow_style = ContourStyle(
-        colors=rain_snow_color_map,
-        levels=rain_snow_contour_lev,
-        fill=True,
-        colorbar_style=ColorbarStyle(label="mix")
-    )
+    style_registry = get_default_registry()
+    rain_style = style_registry.get_style("rain", "cn_prep")
+    snow_style = style_registry.get_style("sf")
+    rain_snow_style = style_registry.get_style("rain_snow")
 
     # create domain
     if area_range is None:

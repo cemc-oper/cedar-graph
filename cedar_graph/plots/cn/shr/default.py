@@ -7,10 +7,9 @@ import pandas as pd
 import xarray as xr
 import matplotlib.colors as mcolors
 
-from cedarkit.plots.style import ContourStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap, generate_colormap_using_ncl_colors
 from cedarkit.plots.calculate import calculate_levels_automatic
 from cedarkit.plots.types import AreaRange
 
@@ -89,66 +88,27 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     first_level = plot_metadata.first_level
     second_level = plot_metadata.second_level
 
-    # 合并色表
-    ncl_colormap = get_ncl_colormap("WhViBlGrYeOrRe")
-    color_names = [
-        "aquamarine",
-        "RoyalBlue",
-        "LightSkyBlue",
-        "blue",
-        "PowderBlue",
-        "lightseagreen",
-        "PaleGreen",
-        "Wheat",
-        "Brown",
-        "DarkOliveGreen3",
-        "red",
-        "Green",
-        "forestgreen",
-        "deepSkyBlue",
-        "Blue",
-        "mediumpurple1",
-        "Magenta",
-        "darkorange3",
-    ]
-    user_colormap = generate_colormap_using_ncl_colors(color_names, "user")
-    colors = np.concatenate((ncl_colormap.colors, user_colormap.colors), axis=0)
-    color_map = mcolors.ListedColormap(colors, "color_map")
-
-    color_index = np.array([2, 4, 5, 6, 8, 13, 69, 73, 76, 79, 65, 64, 63, 62, 60, 58, 35]) - 2
-    vwsh_color_map = mcolors.ListedColormap(color_map(color_index), "vwsh_color_map")
-
-    # # use plot area for min and max value.
-    # area_vwsh_field = vwsh_field.sel(
-    #     longitude=slice(plot_area.area[0], plot_area.area[1]),
-    #     latitude=slice(plot_area.area[3], plot_area.area[2]),
-    # )[::3, ::3]
+    # style: levels 由数据范围按 NCL nice-values 算法运行时计算，色标取自样式库
+    style_registry = get_default_registry()
+    vwsh_style = style_registry.get_style("shr", "cn_fill")
+    vwsh_line_style = style_registry.get_style("shr", "cn_line")
 
     min_value = vwsh_field.min().values
     max_value = vwsh_field.max().values
     level_setting = calculate_levels_automatic(
         min_value=min_value,
         max_value=max_value,
-        max_count=len(color_index),
+        max_count=len(vwsh_style.colors.colors),
         outside=False,
     )
     plot_logger.debug(f"value range: {min_value} {max_value}")
     plot_logger.debug(f"auto level: {level_setting}")
     vwsh_levels = np.arange(level_setting.min_value, level_setting.max_value + level_setting.step, level_setting.step)
-    vwsh_color_map = mcolors.ListedColormap(vwsh_color_map(np.arange(0, len(vwsh_levels) + 1)), "final_color_map")
+    vwsh_color_map = mcolors.ListedColormap(vwsh_style.colors(np.arange(0, len(vwsh_levels) + 1)), "final_color_map")
 
-    vwsh_style = ContourStyle(
-        colors=vwsh_color_map,
-        levels=vwsh_levels,
-        fill=True,
-    )
-
-    vwsh_line_style = ContourStyle(
-        colors="blue",
-        levels=vwsh_levels,
-        fill=False,
-        linewidths=0.3,
-    )
+    vwsh_style.levels = vwsh_levels
+    vwsh_style.colors = vwsh_color_map
+    vwsh_line_style.levels = vwsh_levels
 
     # create domain
     if plot_metadata.area_range is None:

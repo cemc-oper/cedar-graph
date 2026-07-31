@@ -3,14 +3,10 @@ from typing import Optional
 
 import xarray as xr
 import pandas as pd
-import numpy as np
 
-import matplotlib.colors as mcolors
-
-from cedarkit.plots.style import ContourStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -80,24 +76,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
 
     # style
-    color_map = get_ncl_colormap("rainbow+white+gray")
-
-    rh_2m_level = np.linspace(70, 100, 7, endpoint=True)
-    color_index = np.arange(90, 236, 20)
-
-    # NOTE: NCL code for colormap
-    # cmap=ispan(90,236,20)
-    # cmap(0)=-1
-
-    # color_index[0] = -1 # 透明
-    color_index[0] = 236 # white
-
-    rh_2m_color_map = mcolors.ListedColormap(color_map(color_index))
-    rh_2m_style = ContourStyle(
-        colors=rh_2m_color_map,
-        levels=rh_2m_level,
-        fill=True,
-    )
+    rh_2m_style = get_default_registry().get_style("rh2m")
 
     # create domain
     if plot_metadata.area_range is None:

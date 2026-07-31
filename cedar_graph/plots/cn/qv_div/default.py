@@ -2,14 +2,12 @@ from dataclasses import dataclass
 from typing import Optional
 from copy import deepcopy
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.plots.style import ContourStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedarkit.comp.smooth import smth9
@@ -77,21 +75,10 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
     level = plot_metadata.level
 
-    qv_div_levels = np.arange(-50, -5 + 5, step=5)
-    qv_div_colormap = get_ncl_colormap("WhBlGrYeRe", count=len(qv_div_levels) + 1, spread_start=100 - 2, spread_end=2 - 2)
-
-    qv_div_style = ContourStyle(
-        colors=qv_div_colormap,
-        levels=qv_div_levels,
-        fill=True,
-    )
-    qv_div_line_style = ContourStyle(
-        colors="black",
-        levels=qv_div_levels,
-        linewidths=0.2,
-        linestyles="-",
-        fill=False,
-    )
+    # style
+    style_registry = get_default_registry()
+    qv_div_style = style_registry.get_style("qdiv", "cn_fill")
+    qv_div_line_style = style_registry.get_style("qdiv", "cn_line")
 
     # create domain
     if area_range is None:

@@ -1,16 +1,13 @@
 from dataclasses import dataclass
 from copy import deepcopy
 
-import numpy as np
 import pandas as pd
 import xarray as xr
-import matplotlib.colors as mcolors
 
 from cedar_graph.data.operator import prepare_data
-from cedarkit.plots.style import ContourStyle, ContourLabelStyle, BarbStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -109,39 +106,11 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     wind_level = plot_metadata.wind_level
     pte_levels = plot_data.pte_levels
 
-    # 合并色表
-    color_index = np.array([175, 160, 156, 140, 125, 110, 100, 90, 80, 60]) - 2
-    ncl_color_map = get_ncl_colormap("BkBlAqGrYeOrReViWh200", index=color_index)
-    ncl_colors = ncl_color_map.colors
-    ncl_colors.append([1, 1, 1, 1])
-    color_map = mcolors.ListedColormap(ncl_colors, "plot_colormap")
-
-    pte_diff_level = np.array([-40, -35, -30, -25, -20, -15, -10, -5, 0, 5])
-    pte_diff_style = ContourStyle(
-        colors=color_map,
-        levels=pte_diff_level,
-        fill=True,
-    )
-    pte_diff_line_style = ContourStyle(
-        colors="black",
-        levels=pte_diff_level,
-        fill=False,
-        linestyles="solid",
-        linewidths=0.6,
-        label=True,
-        label_style=ContourLabelStyle(
-            colors="black",
-            background_color="white",
-            fontsize=8,
-        )
-    )
-
-    barb_style = BarbStyle(
-        barbcolor="black",
-        flagcolor="black",
-        linewidth=0.3,
-        # barb_increments=dict(half=2, full=4, flag=20)
-    )
+    # style
+    style_registry = get_default_registry()
+    pte_diff_style = style_registry.get_style("pte_diff", "cn_fill")
+    pte_diff_line_style = style_registry.get_style("pte_diff", "cn_line")
+    barb_style = style_registry.get_style("wind")
 
     # create domain
     if area_range is None:

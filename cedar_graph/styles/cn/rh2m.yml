@@ -1,0 +1,15 @@
+# 2 米相对湿度（填色）。
+id: rh2m
+criteria:
+  - cemc_name: rh2m
+  - eccodes_name: 2r
+optimal: cn
+
+styles:
+  cn:
+    type: contour
+    levels: { linspace: [70, 100, 7] }
+    colormap:
+      ncl: rainbow+white+gray
+      index: [236, 110, 130, 150, 170, 190, 210, 230]
+    fill: true

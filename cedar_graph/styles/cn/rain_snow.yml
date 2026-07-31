@@ -1,0 +1,15 @@
+# 雨夹雪（prep_24h 降水相态图形，由雨/雪比率派生，无直接 GRIB 身份）。
+id: rain_snow
+criteria:
+  - cemc_name: rain_snow
+optimal: cn
+
+styles:
+  cn:
+    type: contour
+    levels: [0.1, 10, 25, 50, 100]
+    colormap:
+      ncl: precip_diff_12lev
+      index: [6, 5, 4, 3, 2, 1]
+    fill: true
+    colorbar: { label: mix }

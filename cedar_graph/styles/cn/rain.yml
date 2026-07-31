@@ -1,0 +1,60 @@
+# 降水。cn 为 24 小时降水填色（rain_24h 图形）；cn_1h~cn_24h 为分时段降水
+# （rain_wind_10m 系列图形，运行时按 interval 选择变体）；cn_prep 为降水相态
+# 图形（prep_24h）中的雨。
+id: rain
+criteria:
+  - cemc_name: rain
+  - wgrib2_name: APCP
+optimal: cn
+
+styles:
+  cn:                       # 24 小时降水
+    type: contour
+    levels: [0.1, 10, 25, 50, 100, 200]
+    colormap:
+      ncl_colors: [transparent, White, DarkOliveGreen3, forestgreen, deepSkyBlue, Blue, Magenta, deeppink4]
+    fill: true
+    colorbar: { label: rain }
+
+  cn_prep:                  # 降水相态图形中的雨
+    type: contour
+    levels: [0.1, 10, 25, 50, 100, 250]
+    colormap:
+      ncl_colors: [transparent, PaleGreen2, ForestGreen, DeepSkyBlue, blue1, magenta1, DeepPink3, DarkOrchid4]
+    fill: true
+    colorbar: { label: rain }
+
+  cn_1h:
+    type: contour
+    levels: [0.1, 1, 2, 4, 6, 8, 10, 20, 50]
+    colormap:
+      ncl_colors: [White, DarkOliveGreen1, DarkOliveGreen3, forestgreen, deepSkyBlue, Blue, darkgreen, Magenta, darkorange, deeppink4]
+    fill: true
+
+  cn_3h:
+    type: contour
+    levels: [0.1, 3, 10, 20, 50, 70]
+    colormap:
+      ncl_colors: [White, paleGreen2, forestgreen, deepSkyBlue, Blue, Magenta, deeppink4]
+    fill: true
+
+  cn_6h:
+    type: contour
+    levels: [0.1, 4, 13, 25, 60]
+    colormap:
+      ncl_colors: [White, paleGreen2, forestgreen, deepSkyBlue, Blue, Magenta]
+    fill: true
+
+  cn_12h:
+    type: contour
+    levels: [0.1, 5, 15, 30, 70, 140]
+    colormap:
+      ncl_colors: [White, paleGreen2, forestgreen, deepSkyBlue, Blue, Magenta, deeppink4]
+    fill: true
+
+  cn_24h:
+    type: contour
+    levels: [0.1, 10, 25, 50, 100, 200]
+    colormap:
+      ncl_colors: [transparent, White, paleGreen2, forestgreen, deepSkyBlue, Blue, Magenta, deeppink4]
+    fill: true

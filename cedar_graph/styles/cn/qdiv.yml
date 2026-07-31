@@ -1,0 +1,24 @@
+# 水汽通量散度。填色 + 等值线两个变体叠加。
+id: qdiv
+criteria:
+  - cemc_name: qdiv
+  - wgrib2_name: FRZR
+optimal: cn_fill
+
+styles:
+  cn_fill:
+    type: contour
+    levels: { range: [-50, 0, 5] }
+    colormap:
+      ncl: WhBlGrYeRe
+      count: 11
+      spread_start: 98
+      spread_end: 0
+    fill: true
+
+  cn_line:
+    type: contour
+    levels: { range: [-50, 0, 5] }
+    colormap: { colors: [black] }
+    linewidth: 0.2
+    linestyles: "-"

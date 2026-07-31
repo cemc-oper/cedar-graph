@@ -4,14 +4,11 @@ from copy import deepcopy
 
 import xarray as xr
 import pandas as pd
-import numpy as np
-
-import matplotlib.colors as mcolors
 
 from cedarkit.comp.smooth import smth9
 from cedarkit.comp.util import apply_to_xarray_values
 
-from cedarkit.plots.style import ContourStyle, ContourLabelStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
 from cedarkit.plots.types import AreaRange
@@ -90,54 +87,9 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
 
     # style
-    map_colors = np.array([
-        (255, 255, 255),
-        (0, 0, 0),
-        (20, 100, 210),
-        (40, 130, 240),
-        (80, 165, 245),
-        (150, 210, 250),
-        (180, 240, 250),
-        (203, 248, 253),
-        (255, 255, 255),
-        (180, 250, 170),
-        (120, 245, 115),
-        (55, 210, 60),
-        (30, 180, 30),
-        (15, 160, 15),
-        (0, 0, 255),
-        (255, 0, 0),
-        (255, 140, 0),
-        (238, 18, 137),
-        (255, 121, 121),
-        (211, 211, 211),
-    ], dtype=float) / 255
-    colormap = mcolors.ListedColormap(map_colors)
-
-    mslp_colormap = mcolors.ListedColormap(colormap(np.array([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])))
-    mslp_contour_lev = np.array([980, 985, 990, 995, 1000, 1005, 1020, 1025, 1030, 1035, 1040])
-    mslp_style = ContourStyle(
-        colors=mslp_colormap,
-        levels=mslp_contour_lev,
-        fill=True,
-    )
-
-    h_contour_lev = np.linspace(500, 588, endpoint=True, num=23)
-    h_linewidths = np.where(h_contour_lev == 588, 1.4, 0.7)
-    color_list = np.where(h_contour_lev == 588, 1, 14)
-    hgt_style = ContourStyle(
-        levels=h_contour_lev,
-        colors=mcolors.ListedColormap(colormap(color_list)),
-        linewidths=h_linewidths,
-        label=True,
-        label_style=ContourLabelStyle(
-            manual=False,
-            inline=True,
-            fontsize=7,
-            fmt="{:.0f}".format,
-            colors=colormap([15]),
-        )
-    )
+    style_registry = get_default_registry()
+    mslp_style = style_registry.get_style("psl")
+    hgt_style = style_registry.get_style("h_500", "cn_dagpm")
 
     # create domain
     if plot_metadata.area_range is None:

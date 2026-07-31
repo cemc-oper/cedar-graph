@@ -1,0 +1,17 @@
+# 风羽。现有全部含风羽图形（10m 风与各 pl 层次风）BarbStyle 一致，不分层次。
+id: wind
+criteria:
+  - cemc_name: u
+  - cemc_name: v
+  - eccodes_name: u
+  - eccodes_name: v
+  - wgrib2_name: UGRD
+  - wgrib2_name: VGRD
+optimal: cn
+
+styles:
+  cn:
+    type: barb
+    barbcolor: black
+    flagcolor: black
+    linewidth: 0.3

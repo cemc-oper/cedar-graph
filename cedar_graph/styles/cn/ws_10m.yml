@@ -1,0 +1,16 @@
+# 10 米风速（填色，风级分界层次）。
+id: ws_10m
+criteria:
+  - cemc_name: ws
+    first_level_type: 103   # heightAboveGround
+    first_level: 10
+optimal: cn
+
+styles:
+  cn:
+    type: contour
+    levels: [3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5]
+    colormap:
+      rgb_table: cn_ws15
+      index: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    fill: true

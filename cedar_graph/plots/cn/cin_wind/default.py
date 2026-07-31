@@ -2,14 +2,12 @@ from dataclasses import dataclass
 from typing import Optional
 from copy import deepcopy
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.plots.style import ContourStyle, BarbStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -91,27 +89,10 @@ def plot(
     forecast_time = plot_metadata.forecast_time
     wind_level = plot_metadata.wind_level
 
-    cin_levels = np.array([0, 10, 20, 30 ,40, 50, 60, 70, 80, 100, 150, 200])
-    color_index = np.array([0, 64, 67, 70, 73, 76, 79, 82, 85, 88, 91, 94, 97])
-    cin_colormap = get_ncl_colormap("WhViBlGrYeOrRe", index=color_index)
-
-    cin_style = ContourStyle(
-        colors=cin_colormap,
-        levels=cin_levels,
-        fill=True,
-        # label=True,
-        # label_style=ContourLabelStyle(
-        #     fontsize=7,
-        #     background_color="white"
-        # )
-    )
-
-    barb_style = BarbStyle(
-        barbcolor="black",
-        flagcolor="black",
-        linewidth=0.3,
-        # barb_increments=dict(half=2, full=4, flag=20)
-    )
+    # style
+    style_registry = get_default_registry()
+    cin_style = style_registry.get_style("cin")
+    barb_style = style_registry.get_style("wind")
 
     # create domain
     if plot_metadata.area_range is None:

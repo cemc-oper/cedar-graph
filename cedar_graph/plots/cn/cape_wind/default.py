@@ -2,14 +2,12 @@ from dataclasses import dataclass
 from typing import Optional
 from copy import deepcopy
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.plots.style import ContourStyle, BarbStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-from cedarkit.plots.colormap import get_ncl_colormap
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -88,33 +86,11 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_name = plot_metadata.area_name
     wind_level = plot_metadata.wind_level
 
-    cape_levels = np.array([
-        0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
-        1100, 1200, 1300, 1400, 1500, 1750, 2000, 2250, 2500
-    ])
-
-    color_index = np.array([2, 7, 12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62, 67, 72, 77, 82, 87, 90, 93, 96, 99, 101]) - 2
-    cape_colormap = get_ncl_colormap("WhBlGrYeRe", index=color_index)
-
-    cape_style = ContourStyle(
-        colors=cape_colormap,
-        levels=cape_levels,
-        fill=True,
-    )
-    cape_line_style = ContourStyle(
-        # colors="white",
-        colors=[cape_colormap.colors[0]],
-        levels=cape_levels,
-        linewidths=0.15,
-        fill=False,
-    )
-
-    barb_style = BarbStyle(
-        barbcolor="black",
-        flagcolor="black",
-        linewidth=0.3,
-        # barb_increments=dict(half=2, full=4, flag=20)
-    )
+    # style
+    style_registry = get_default_registry()
+    cape_style = style_registry.get_style("cape", "cn_fill")
+    cape_line_style = style_registry.get_style("cape", "cn_line")
+    barb_style = style_registry.get_style("wind")
 
     # create domain
     if plot_metadata.area_range is None:

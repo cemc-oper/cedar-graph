@@ -41,6 +41,9 @@ dependencies = [
 Homepage = "https://github.com/cemc-oper/cedar-graph"
 Repository = "https://github.com/cemc-oper/cedar-graph.git"
 
+[project.entry-points."cedarkit.plots.styles"]
+cn = "cedar_graph.styles"
+
 [project.optional-dependencies]
 test = ["pytest"]
 cov = ["pytest-cov", "codecov"]

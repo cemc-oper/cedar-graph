@@ -1,0 +1,22 @@
+# K 指数。填色 + 等值线两个变体，同一图形中作为两个图层叠加。
+id: kidx
+criteria:
+  - cemc_name: kidx
+  - wgrib2_name: KX
+optimal: cn_fill
+
+styles:
+  cn_fill:
+    type: contour
+    levels: [20, 25, 30, 35, 40, 45, 50]
+    colormap:
+      ncl: WhBlGrYeRe
+      index: [0, 15, 45, 55, 65, 75, 85, 95, 100]
+    fill: true
+
+  cn_line:
+    type: contour
+    levels: [20, 25, 30, 35, 40, 45, 50]
+    colormap: { colors: [black] }
+    linewidth: 0.5
+    label: { fontsize: 7, background_color: white }

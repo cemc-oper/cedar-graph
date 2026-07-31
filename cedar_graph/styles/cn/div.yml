@@ -1,0 +1,25 @@
+# 散度。填色 + 等值线两个变体叠加。
+id: div
+criteria:
+  - cemc_name: div
+  - wgrib2_name: RELD
+optimal: cn_fill
+
+styles:
+  cn_fill:
+    type: contour
+    levels: { range: [-50, 0, 5] }
+    colormap:
+      ncl: WhBlGrYeRe
+      count: 11
+      spread_start: 98
+      spread_end: 0
+    fill: true
+
+  cn_line:
+    type: contour
+    levels: { range: [-50, 0, 5] }
+    colormap: { colors: [black] }
+    linewidth: 0.5
+    linestyles: solid
+    label: { fontsize: 7, background_color: white }

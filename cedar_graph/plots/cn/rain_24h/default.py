@@ -1,14 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedarkit.plots.style import ContourStyle, ColorbarStyle
+from cedarkit.plots.style import get_default_registry
 from cedarkit.plots.chart import Panel
 from cedarkit.plots.domains import EastAsiaMapTemplate, CnAreaMapTemplate
-from cedarkit.plots.colormap import generate_colormap_using_ncl_colors
 from cedarkit.plots.types import AreaRange
 
 from cedar_graph.metadata import BasePlotMetadata
@@ -74,27 +72,7 @@ def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel:
     area_range = plot_metadata.area_range
 
     # style
-    # 24小时降水常用填充图样式
-    rain_contour_lev = np.array([0.1, 10, 25, 50, 100, 200])
-    rain_color_map = generate_colormap_using_ncl_colors(
-        [
-            "transparent",
-            "White",
-            "DarkOliveGreen3",
-            "forestgreen",
-            "deepSkyBlue",
-			"Blue",
-            "Magenta",
-            "deeppink4"
-        ],
-        name="rain"
-    )
-    rain_style = ContourStyle(
-        colors=rain_color_map,
-        levels=rain_contour_lev,
-        fill=True,
-        colorbar_style=ColorbarStyle(label="rain")
-    )
+    rain_style = get_default_registry().get_style("rain")
 
     # create domain
     if area_range is None:

@@ -1,0 +1,16 @@
+# 降雪（prep_24h 降水相态图形）。
+id: sf
+criteria:
+  - cemc_name: sf
+  - wgrib2_name: ASNOW
+optimal: cn
+
+styles:
+  cn:
+    type: contour
+    levels: [0.1, 2.5, 5, 10, 20, 30]
+    colormap:
+      ncl: mch_default
+      index: [0, 7, 6, 5, 4, 3, 1]
+    fill: true
+    colorbar: { label: snow }

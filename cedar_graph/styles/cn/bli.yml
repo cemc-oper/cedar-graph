@@ -1,0 +1,23 @@
+# 最优抬升指数。填色 + 等值线两个变体叠加。
+id: bli
+criteria:
+  - cemc_name: bli
+  - wgrib2_name: BLI
+optimal: cn_fill
+
+styles:
+  cn_fill:
+    type: contour
+    levels: [-48, -42, -36, -30, -24, -18, -12, -6, 0]
+    colormap:
+      ncl: prcp_3
+      index: [20, 19, 18, 16, 14, 12, 10, 8, 6, 4]
+      index_offset: -2
+    fill: true
+
+  cn_line:
+    type: contour
+    levels: [-48, -42, -36, -30, -24, -18, -12, -6, 0]
+    colormap: { colors: [black] }
+    linewidth: 0.5
+    label: { fontsize: 7, background_color: white }
