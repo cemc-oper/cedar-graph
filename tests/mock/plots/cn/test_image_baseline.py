@@ -1,5 +1,5 @@
 """
-试点及批量转换图形的 PNG 基线对比测试。
+配方图形的 PNG 基线对比测试。
 
 基线 PNG 体积较大，不入库，仅用于本地开发期对照：
 CI 环境（``CI`` 环境变量）或基线缺失时自动 skip；
@@ -7,10 +7,13 @@ CI 环境（``CI`` 环境变量）或基线缺失时自动 skip；
 ``tests/mock/baseline/cn/``，已被 gitignore）。
 
 数据来自 ``cedar_graph.testing.MockDataSource``（确定性合成场），
-渲染参数固定，本地可复现。基线由 Python 图形模块渲染生成，
-``test_recipe_baseline.py`` 用同一批基线验收配方版本。
+渲染走 PlotEngine 配方流水线（Python 图形模块已随 G4 删除，
+配方是唯一实现），渲染参数固定，本地可复现。
+
+覆盖全部 13 个可声明图形（设计文档 §4.5 转换清单）；shr、t_dew_t 等
+诊断复杂图形保留 Python 逃生舱（``cedar_graph.plots.cn``），由各自的
+渲染冒烟测试覆盖，不在此列。
 """
-import importlib
 import os
 from pathlib import Path
 
@@ -18,6 +21,7 @@ import pandas as pd
 import pytest
 
 from cedar_graph.data import DataLoader
+from cedar_graph.recipes.engine import get_recipe_engine
 
 from ...image_baseline import assert_image_match
 
@@ -25,36 +29,38 @@ from ...image_baseline import assert_image_match
 IN_CI = os.environ.get("CI", "").lower() in ("true", "1", "yes")
 
 
-def _render_module(module_path, params, mock_data_source, start_time, forecast_time, system_name, sample_step, output_path):
-    plot_module = importlib.import_module(f"cedar_graph.plots.cn.{module_path}.default")
+def _render_recipe(recipe_name, params, mock_data_source, start_time, forecast_time, system_name, sample_step, output_path):
+    engine = get_recipe_engine()
+    recipe_path = Path(__file__).parents[4] / "cedar_graph" / "recipes" / "cn" / f"{recipe_name}.yaml"
+    module = engine.build_module(engine.load_recipe(recipe_path))
 
     data_loader = DataLoader(data_source=mock_data_source)
-    plot_data = plot_module.load_data(
+    plot_data = module.load_data(
         data_loader=data_loader,
         start_time=start_time,
         forecast_time=forecast_time,
         **params,
     )
-    metadata = plot_module.PlotMetadata(
+    metadata = module.PlotMetadata(
         start_time=start_time,
         forecast_time=forecast_time,
         system_name=system_name,
         sample_step=sample_step,
         **params,
     )
-    panel = plot_module.plot(plot_data=plot_data, plot_metadata=metadata)
+    panel = module.plot(plot_data=plot_data, plot_metadata=metadata)
     panel.save(output_path)
 
 
-#: plot name -> (module path, extra load/plot params)
+#: plot name -> (recipe name, extra load/plot params)
 #: 覆盖全部 13 个可声明图形（配方转换清单，设计文档 §4.5）。
 BASELINE_PLOTS = {
-    "t_2m": ("t_2m", {}),
-    "height_500_mslp": ("height_500_mslp", {}),
-    "k_wind": ("k_wind", {"wind_level": 850.0}),
-    "rh_2m": ("rh_2m", {}),
-    "radar_reflectivity": ("radar_reflectivity", {}),
-    "height_500_wind_850": ("height_500_wind_850", {}),
+    "t_2m": ("t2m", {}),
+    "height_500_mslp": ("h_500_psl", {}),
+    "k_wind": ("kidx_wind", {"wind_level": 850.0}),
+    "rh_2m": ("rh2m", {}),
+    "radar_reflectivity": ("cdbz", {}),
+    "height_500_wind_850": ("h_500_wind_850", {}),
     "bli_wind": ("bli_wind", {"wind_level": 850.0}),
     "cape_wind": ("cape_wind", {"wind_level": 850.0}),
     "cin_wind": ("cin_wind", {"wind_level": 850.0}),
@@ -77,7 +83,7 @@ def test_image_baseline(
         update_baseline,
         tmp_path,
 ):
-    """渲染图形并与 PNG 基线对比（本地）或重新生成基线。"""
+    """渲染配方图形并与 PNG 基线对比（本地）或重新生成基线。"""
     baseline_path = Path(baseline_dir, "cn", f"{plot_name}.png")
 
     if update_baseline:
@@ -93,9 +99,9 @@ def test_image_baseline(
             )
         render_path = Path(tmp_path, f"{plot_name}.png")
 
-    module_path, params = BASELINE_PLOTS[plot_name]
-    _render_module(
-        module_path,
+    recipe_name, params = BASELINE_PLOTS[plot_name]
+    _render_recipe(
+        recipe_name,
         params,
         mock_data_source=mock_data_source,
         start_time=start_time,
