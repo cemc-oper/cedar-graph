@@ -10,13 +10,20 @@ mystnb:
 它内部会通过 {class}`~cedar_graph.data.LocalDataSource`
 完成数据查找与读取。
 
+`plot_type` 直接映射图种定义：**先查 YAML 配方**
+（`cedar_graph/recipes/`，如 `cn.t2m` 对应
+`recipes/cn/t2m.yaml`），**再查 Python 绘图模块**
+（`cedar_graph/plots/`，如 `cn.shr.default`），两者接口一致、
+对调用方透明。完整图种清单见 {doc}`../api/recipes` 与
+{doc}`../api/plots`。
+
 ## 默认范围下的 2 m 温度
 
 ```python
 from cedar_graph.quickplot import quick_plot
 
 quick_plot(
-    plot_type="cn.t_2m.default",
+    plot_type="cn.t2m",
     system_name="CMA-GFS",
     start_time="2024073000",
     forecast_time="48h",
@@ -37,12 +44,35 @@ from cedar_graph.quickplot import quick_plot
 from cedarkit.plots.types import AreaRange
 
 quick_plot(
-    plot_type="cn.wind_10m.default",
+    plot_type="cn.wind_10m",
     system_name="CMA-MESO",
     start_time="2024073000",
     forecast_time="48h",
     area_name="NorthEast",
     area_range=AreaRange.from_tuple((108, 137, 37, 55)),
+)
+```
+
+## 带参数的图种
+
+配方声明的参数（见 {doc}`recipe`）作为 `quick_plot` 的关键字参数
+传入，例如 K 指数 + 风场的风场层次、降水图形的降水时段：
+
+```python
+quick_plot(
+    plot_type="cn.kidx_wind",
+    system_name="CMA-GFS",
+    start_time="2024073000",
+    forecast_time="48h",
+    wind_level=850.0,          # 必需参数
+)
+
+quick_plot(
+    plot_type="cn.rain_wind_10m",
+    system_name="CMA-GFS",
+    start_time="2024073000",
+    forecast_time="48h",
+    interval="24h",            # 降水时段
 )
 ```
 

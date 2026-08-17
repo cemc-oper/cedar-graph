@@ -53,29 +53,37 @@ field = mock_source.retrieve(
 field
 ```
 
-## 驱动一个绘图模块
+## 驱动一个图种定义
 
-由于绘图模块只与 loader 交互，把 `MockDataSource` 换成
-`LocalDataSource` 只需要改一行。下面这段代码与 `tests/mock/plots/cn/`
-里的 pytest 用例几乎完全相同。
+图种定义（配方或 Python 绘图模块）只与 loader 交互，把
+`MockDataSource` 换成 `LocalDataSource` 只需要改一行。下面这段代码
+与 `tests/mock/plots/cn/` 里的 pytest 用例几乎完全相同。
 
 ```{code-cell} python
-from cedar_graph.plots.cn.t_2m.default import PlotMetadata, load_data, plot
+from cedar_graph.recipes.engine import get_recipe_engine
+from cedarkit.plots.engine.loader import get_plot_definition
 
-plot_data = load_data(
+plot_module = get_plot_definition(
+    plot_type="cn.t2m",
+    base_module_name="cedar_graph.plots",
+    recipe_base_module="cedar_graph.recipes",
+    engine=get_recipe_engine(),
+)
+
+plot_data = plot_module.load_data(
     data_loader=data_loader,
     start_time=start_time,
     forecast_time=forecast_time,
 )
 
-metadata = PlotMetadata(
+metadata = plot_module.PlotMetadata(
     start_time=start_time,
     forecast_time=forecast_time,
     system_name="CMA-GFS",
     sample_step=0.5,
 )
 
-panel = plot(plot_data=plot_data, plot_metadata=metadata)
+panel = plot_module.plot(plot_data=plot_data, plot_metadata=metadata)
 panel.show()
 ```
 

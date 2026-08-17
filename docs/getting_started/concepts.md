@@ -17,7 +17,7 @@ cedar-graph 的对外接口由若干互相协作的小组件构成。理解它�
 cedar-graph 内置了两种实现：
 
 - {class}`~cedar_graph.data.LocalDataSource`：在 CMA-HPC
-  共享文件系统上通过 `reki.data_finder` 解析路径，
+  共享文件系统上通过 reki 的 `local` source 解析路径，
   使用 ecCodes 读取 GRIB2 字段。
 - {class}`cedar_graph.testing.MockDataSource`：解析式生成
   合成场，本文档与 mock 测试都使用这一实现。
@@ -29,18 +29,19 @@ cedar-graph 内置了两种实现：
 方法。绘图模块只与 loader 交互，不直接调用 data source —
 这正是真实数据与 mock 数据可以无感切换的原因。
 
-## 绘图模块约定
+## 图种定义：配方与绘图模块
 
-`cedar_graph.plots.<region>.<name>.default` 下的每一个绘图
-模块都对外暴露相同的四个符号：
+一个图种定义可以是 **YAML 配方**（`cedar_graph/recipes/cn/*.yaml`，
+大多数图种）或 **Python 绘图模块**（`cedar_graph.plots.cn` 下的
+逃生舱模块）。两者对外暴露相同的三件套接口：
 
 ```python
 @dataclass
-class PlotMetadata(BasePlotMetadata):
+class PlotMetadata:
     start_time: pd.Timestamp = None
     forecast_time: pd.Timedelta = None
     system_name: str = None
-    # 该图种自身的额外配置项，例如 area_range、level …
+    # 该图种自身的额外配置项，例如 area_range、wind_level …
 
 @dataclass
 class PlotData:
@@ -52,15 +53,17 @@ def load_data(data_loader, start_time, forecast_time, **kwargs) -> PlotData: ...
 def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel: ...
 ```
 
-`load_data` 负责调取数据并完成必要的预处理；
+配方的 `PlotMetadata` / `PlotData` 由
+{class}`~cedarkit.plots.engine.engine.PlotModuleAdapter`
+按配方内容动态生成。`load_data` 负责调取数据并完成必要的预处理；
 `plot` 在此基础上构造 {class}`cedarkit.plots.chart.Panel`，
 画底图、风羽、等值线，设置标题与色标，最后返回 Panel。
 
 ## quick_plot
 
 {func}`cedar_graph.quickplot.quick_plot` 是面向 CMA-HPC 交互式
-使用的便捷入口。给定图种名称（例如 `"cn.t_2m.default"`）、
-业务系统名以及预报时间参数，它会自动选择对应的绘图模块、
-创建 `LocalDataSource`、依次调用 `load_data` 与 `plot`。
+使用的便捷入口。给定图种名称（例如 `"cn.t2m"`）、
+业务系统名以及预报时间参数，装载器先查配方、再查 Python 模块，
+然后创建 `LocalDataSource`、依次调用 `load_data` 与 `plot`。
 入参支持字符串形式的时间（如 `"2025081900"`）和时间间隔
 （如 `"24h"`）。

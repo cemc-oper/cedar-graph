@@ -5,107 +5,21 @@ mystnb:
 
 # `cedar_graph.plots`
 
-`cedar_graph.plots.cn.<name>.default` 下的每一个绘图模块都对外暴露
-相同的四个符号：`PlotMetadata`、`PlotData`、`load_data`、`plot`。
+`cedar_graph.plots.cn` 下保留的是 **Python 逃生舱**图形——诊断逻辑
+超出配方表达能力（设计文档 D6）的 5 个图种。其余 13 个图种已由
+`cedar_graph/recipes/cn/` 下的 YAML 配方驱动（见
+{doc}`recipes` 与 {doc}`../tutorials/recipe`）。
 
-## 常规图
+逃生舱模块与配方适配器对外暴露相同的三件套接口：
+`PlotMetadata`、`load_data`、`plot`（部分模块另有 `PlotData` 与
+自定义 `check_available`）。
 
-### `cn.t_2m`（2 米温度）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.t_2m.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.rh_2m`（2 米相对湿度）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.rh_2m.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.height_500_mslp`（500 hPa 高度场 + 海平面气压）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.height_500_mslp.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.height_500_wind_850`（500 hPa 高度场 + 850 hPa 风场）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.height_500_wind_850.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.wind_10m`（10 米风场）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.wind_10m.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-## 诊断图
-
-### `cn.radar_reflectivity`（雷达组合反射率）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.radar_reflectivity.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
+## 诊断图（Python 逃生舱）
 
 ### `cn.div_wind`（散度 + 风场）
 
 ```{eval-rst}
 .. automodule:: cedar_graph.plots.cn.div_wind.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.k_wind`（K 指数 + 风场）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.k_wind.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.cape_wind`（CAPE + 风场）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.cape_wind.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.cin_wind`（CIN + 风场）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.cin_wind.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.bli_wind`（最优抬升指数 + 风场）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.bli_wind.default
    :members:
    :undoc-members:
    :show-inheritance:
@@ -142,35 +56,6 @@ mystnb:
 
 ```{eval-rst}
 .. automodule:: cedar_graph.plots.cn.t_dew_t.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-## 降水图
-
-### `cn.rain_24h`（24 小时降水）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.rain_24h.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.rain_wind_10m`（降水 + 10 米风场）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.rain_wind_10m.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-### `cn.prep_24h`（24 小时多相态降水）
-
-```{eval-rst}
-.. automodule:: cedar_graph.plots.cn.prep_24h.default
    :members:
    :undoc-members:
    :show-inheritance:

@@ -10,6 +10,7 @@ mystnb:
 
 data
 plots
+recipes
 quickplot
 testing
 ```
