@@ -90,3 +90,32 @@ def test_python_plot_loads_through_provider(monkeypatch):
     assert result.level == 850
     assert [query.parameter for query in queries] == ["t", "DPT"]
     assert all(query.level == 850 for query in queries)
+
+
+def test_t2m_recipe_provider_render_matches_legacy_data(monkeypatch, mock_data_source, start_time, forecast_time, tmp_path):
+    """Provider pilot preserves raw fields and completes a render smoke test."""
+    engine = get_recipe_engine()
+    recipe_path = Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
+    module = engine.build_module(engine.load_recipe(recipe_path))
+    legacy_loader = DataLoader(data_source=mock_data_source)
+    legacy = module.load_data(legacy_loader, start_time, forecast_time)
+
+    class Reader:
+        query = None
+        def sel(self, query):
+            self.query = query
+            return self
+        def one(self):
+            return _Field(mock_data_source.retrieve(t_2m_info, start_time, forecast_time))
+
+    reader = Reader()
+    monkeypatch.setattr(reki, "from_source", lambda *args, **kwargs: reader)
+    provider = RekiProvider(reki.SourceSpec("local", args=("fixture",)))
+    provided = module.load_data(DataLoader(provider=provider), start_time, forecast_time)
+    xr.testing.assert_identical(provided.t2m, legacy.t2m)
+    metadata = module.PlotMetadata(
+        system_name="CMA-GFS", start_time=start_time, forecast_time=forecast_time,
+    )
+    output = tmp_path / "t2m-provider.png"
+    module.plot(provided, metadata).save(output)
+    assert output.exists() and output.stat().st_size > 0
