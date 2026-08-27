@@ -30,6 +30,19 @@ mystnb:
    :show-inheritance:
 ```
 
+## Reki provider
+
+`RekiProvider` is the stage-1 bridge for new integrations. It binds an
+immutable `reki.SourceSpec` and runtime times to a `reki.FieldQuery`; required
+loads use `one()` while optional loads use `one_or_none()`. Existing
+`DataSource` and `DataLoader` remain supported. A `DataLoader(provider=...)`
+adapts legacy `FieldInfo` values through `FieldInfo.to_field_query()`.
+
+```{eval-rst}
+.. automodule:: cedar_graph.data.provider
+   :members:
+```
+
 ## 字段元信息（Field info）
 
 ```{eval-rst}

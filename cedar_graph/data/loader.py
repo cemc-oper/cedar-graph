@@ -5,6 +5,7 @@ import xarray as xr
 
 from .field_info import FieldInfo
 from .source import DataSource
+from .provider import RekiProvider
 
 
 class DataLoader:
@@ -16,14 +17,19 @@ class DataLoader:
     data_source : DataSource
         some data source which is used to load the field.
     """
-    def __init__(self, data_source: DataSource):
+    def __init__(self, data_source: Optional[DataSource] = None,
+                 provider: Optional[RekiProvider] = None):
+        if (data_source is None) == (provider is None):
+            raise TypeError("provide exactly one of data_source or provider")
         self.data_source = data_source
+        self.provider = provider
 
     def load(
             self,
             field_info: FieldInfo,
             start_time: pd.Timestamp,
             forecast_time: pd.Timedelta,
+            required: bool = True,
     ) -> Optional[xr.DataArray]:
         """
         Load field from some ``DataSource``.
@@ -39,9 +45,12 @@ class DataLoader:
         -------
         xr.DataArray or None
         """
-        field = self.data_source.retrieve(
-            field_info=field_info,
-            start_time=start_time,
+        if self.provider is not None:
+            return self.provider.load(
+                field_info.to_field_query(), start_time=start_time,
+                forecast_time=forecast_time, required=required,
+            )
+        return self.data_source.retrieve(
+            field_info=field_info, start_time=start_time,
             forecast_time=forecast_time,
         )
-        return field
