@@ -64,6 +64,16 @@ class FieldInfo:
     level: Optional[Union[int, float, Dict[str, int]]] = None
     additional_keys: Optional[Dict[str, Union[str, int, float]]] = None
 
+    def to_field_query(self):
+        """Adapt the legacy field table to reki's immutable query contract."""
+        from reki import FieldQuery
+        return FieldQuery(
+            parameter=self.parameter.get_parameter(),
+            level_type=self.level_type,
+            level=self.level,
+            extra=self.additional_keys or {},
+        )
+
 
 # 2米温度
 t_2m_info = FieldInfo(
