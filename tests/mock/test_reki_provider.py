@@ -6,7 +6,7 @@ from pathlib import Path
 import reki
 from cedar_graph.data import DataLoader, RekiProvider
 from cedar_graph.data.field_info import t_2m_info
-from cedar_graph.recipes.engine import get_recipe_engine
+from cedar_graph.recipes.engine import RECIPE_FIELDS, get_recipe_engine
 from cedar_graph.plots.cn.t_dew_t.default import load_data as load_t_dew_t
 
 
@@ -119,3 +119,54 @@ def test_t2m_recipe_provider_render_matches_legacy_data(monkeypatch, mock_data_s
     output = tmp_path / "t2m-provider.png"
     module.plot(provided, metadata).save(output)
     assert output.exists() and output.stat().st_size > 0
+
+
+def test_recipe_query_is_source_neutral_for_catalog_local_and_cmadaas_mock(monkeypatch):
+    """A catalog source changes provider context, never the recipe query.
+
+    The CMADaaS binding is intentionally mocked: this is the deterministic
+    offline gate while a live service remains an optional integration test.
+    """
+    catalog = reki.load_catalog(plugins=False, user=False)
+    local = catalog.resolve("CMA-GFS").source
+    remote = catalog.resolve("CMA-GFS-CMADaaS").source
+    calls = []
+    readers = []
+
+    def fake_from_source(spec, **kwargs):
+        calls.append((spec, kwargs))
+        reader = _Reader(xr.DataArray([[273.15]], dims=("latitude", "longitude"), attrs={"units": "K"}))
+        readers.append(reader)
+        return reader
+
+    monkeypatch.setattr(reki, "from_source", fake_from_source)
+    engine = get_recipe_engine()
+    recipe_path = Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
+    module = engine.build_module(engine.load_recipe(recipe_path))
+    start_time = pd.Timestamp("2026-01-01")
+    forecast_time = pd.Timedelta(hours=6)
+
+    for source in (local, remote):
+        result = module.load_data(
+            DataLoader(provider=RekiProvider(source)), start_time, forecast_time,
+        )
+        assert result.t2m.item() == 0.0
+
+    assert calls[0][0] == local
+    assert calls[1][0] == remote
+    assert calls[0][1] == calls[1][1] == {
+        "start_time": start_time, "forecast_time": forecast_time,
+    }
+    assert readers[0].query == readers[1].query == reki.resolve_parameter("cedarkit.t2m").query
+
+    rain_recipe = engine.load_recipe(
+        Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / "rain_wind_10m.yaml"
+    )
+    rain = rain_recipe.data["rain"]
+    u_10m = rain_recipe.data["u_10m"]
+    v_10m = rain_recipe.data["v_10m"]
+    assert RECIPE_FIELDS[rain.field].to_field_query() == reki.resolve_parameter("cedarkit.rain").query
+    assert RECIPE_FIELDS[u_10m.field].to_field_query(
+    ) == reki.resolve_parameter("cedarkit.u").query
+    assert (u_10m.level.first_level_type, u_10m.level.first_level) == (103, 10)
+    assert (v_10m.level.first_level_type, v_10m.level.first_level) == (103, 10)
