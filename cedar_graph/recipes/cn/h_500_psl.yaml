@@ -5,13 +5,13 @@ domain: { default: east_asia, area: cn_area }
 
 data:
   h_500:
-    field: h
+    field: cedarkit.h
     level: { first_level_type: 100, first_level: 500 }   # isobaricInhPa 500
     transforms:
       - { op: style_units }                              # dagpm：gpm -> 10gpm（h_500.yml units）
       - { op: smth9, args: [0.5, 0.25, false], repeat: 4 }
   psl:
-    field: mslp
+    field: cedarkit.psl
     transforms:
       - { op: style_units }                              # hPa：Pa -> hPa（psl.yml units）
       - { op: smth9, args: [0.5, -0.25, false], repeat: 2 }

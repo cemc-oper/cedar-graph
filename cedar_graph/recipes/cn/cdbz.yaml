@@ -4,7 +4,7 @@ domain: { default: east_asia, area: cn_area }
 
 data:
   cdbz:
-    field: cr
+    field: cedarkit.cdbz
     transforms:
       - { op: smth9, args: [0.5, -0.25, false], repeat: 2 }
 

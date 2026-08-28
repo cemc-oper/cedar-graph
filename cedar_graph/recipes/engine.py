@@ -10,6 +10,7 @@ Wires the business pieces into the business-agnostic engine:
   injected via the ``cedarkit.plots.styles`` entry point).
 """
 
+from types import MappingProxyType
 from typing import Optional
 
 import numpy as np
@@ -18,51 +19,35 @@ import xarray as xr
 from cedarkit.plots.engine import OpRegistry, PlotEngine
 from cedarkit.plots.style import get_default_registry
 
-from cedar_graph.data.field_info import (
-    apcp_info,
-    asnow_info,
-    bli_info,
-    cape_info,
-    cin_info,
-    cr_info,
-    dew_t_info,
-    div_info,
-    hgt_info,
-    k_index_info,
-    mslp_info,
-    pte_info,
-    qv_div_info,
-    rh_2m_info,
-    t_2m_info,
-    t_info,
-    u_info,
-    v_info,
-    vwsh_info,
-)
+from cedar_graph.data.field_info import field_info_from_parameter
 
-#: recipe field name -> FieldInfo. Keys are cemc element names where one
-#: exists; ``mslp``/``cr`` keep the names used by the current plot modules.
-FIELD_INFOS = {
-    "t2m": t_2m_info,
-    "t": t_info,
-    "rh2m": rh_2m_info,
-    "h": hgt_info,
-    "mslp": mslp_info,
-    "u": u_info,
-    "v": v_info,
-    "cr": cr_info,
-    "apcp": apcp_info,
-    "asnow": asnow_info,
-    "div": div_info,
-    "kidx": k_index_info,
-    "cape": cape_info,
-    "cin": cin_info,
-    "bli": bli_info,
-    "qv_div": qv_div_info,
-    "dpt": dew_t_info,
-    "pte": pte_info,
-    "vwsh": vwsh_info,
+
+# Frozen T2-01 migration matrix, retained only for old Python imports.
+_LEGACY_FIELD_IDS = {
+    "t2m": "cedarkit.t2m", "t": "cedarkit.t", "rh2m": "cedarkit.rh2m",
+    "h": "cedarkit.h", "mslp": "cedarkit.psl", "u": "cedarkit.u",
+    "v": "cedarkit.v", "cr": "cedarkit.cdbz", "apcp": "cedarkit.rain",
+    "asnow": "cedarkit.sf", "div": "cedarkit.div", "kidx": "cedarkit.kidx",
+    "cape": "cedarkit.cape", "cin": "cedarkit.cin", "bli": "cedarkit.bli",
+    "qv_div": "cedarkit.qdiv", "dpt": "cedarkit.td", "pte": "cedarkit.theta-se",
+    "vwsh": "cedarkit.shr",
 }
+_LEGACY_DISPLAY_NAMES = {"kidx": "k", "cin": "cape"}
+
+# All T2-04 fields are represented by the parameter registry.
+OVERRIDE_FIELDS = MappingProxyType({})
+FIELD_INFOS = MappingProxyType({
+    legacy_name: field_info_from_parameter(
+        parameter_id, name=_LEGACY_DISPLAY_NAMES.get(legacy_name, legacy_name)
+    )
+    for legacy_name, parameter_id in _LEGACY_FIELD_IDS.items()
+})
+RECIPE_FIELDS = MappingProxyType(dict(FIELD_INFOS) | {
+    parameter_id: field_info_from_parameter(
+        parameter_id, name=_LEGACY_DISPLAY_NAMES.get(legacy_name, legacy_name)
+    )
+    for legacy_name, parameter_id in _LEGACY_FIELD_IDS.items()
+} | dict(OVERRIDE_FIELDS))
 
 
 def _wind_speed(u: xr.DataArray, v: xr.DataArray, context) -> xr.DataArray:
@@ -102,6 +87,6 @@ def get_recipe_engine() -> PlotEngine:
         _engine = PlotEngine(
             style_registry=get_default_registry(),
             op_registry=create_op_registry(),
-            field_registry=FIELD_INFOS,
+            field_registry=RECIPE_FIELDS,
         )
     return _engine

@@ -70,15 +70,14 @@ def get_field_from_file(field_info: FieldInfo, file_path: Union[str, Path]) -> O
     return grib_field.to_xarray()
 
 
-data_mapper = {
-    "CMA-GFS": "cma_gfs_gmf",
-    "CMA-GEPS": "cma_geps",
-    "CMA-MESO": "cma_meso_1km",
-    "CMA-MESO-1KM": "cma_meso_1km",
-    "CMA-MESO-3KM": "cma_meso_3km",
-    "CMA-REPS": "cma_reps",
-    "CMA-TYM": "cma_tym",
-}
+class _CatalogDataMapper:
+    """Read-only compatibility facade for the historical mapping object."""
+
+    def __getitem__(self, system_name: str) -> str:
+        return reki.load_catalog(plugins=False, user=False).resolve(system_name).record.dataset_id
+
+
+data_mapper = _CatalogDataMapper()
 
 
 def get_file_path(system_name: str, start_time, forecast_time, **kwargs) -> Union[str, Path]:
@@ -99,11 +98,14 @@ def get_file_path(system_name: str, start_time, forecast_time, **kwargs) -> Unio
     Path or None
         file path if found, None if not.
     """
-    data_type_system_name = data_mapper[system_name]
+    source_spec = reki.load_catalog(plugins=False, user=False).resolve(system_name).source
+    if source_spec.name != "local":
+        raise ValueError(f"dataset {system_name!r} is not a local path dataset")
     source = LocalSource(
-        f"{data_type_system_name}/grib2/orig",
+        *source_spec.args,
         start_time=start_time,
         forecast_time=forecast_time,
+        **source_spec.kwargs,
         **kwargs,
     )
     return source.resolve_path()

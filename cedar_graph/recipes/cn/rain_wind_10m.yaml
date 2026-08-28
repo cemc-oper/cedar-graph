@@ -9,14 +9,14 @@ params:
 
 data:
   rain:
-    field: apcp
+    field: cedarkit.rain
     transforms:
       - { op: time_diff, args: ["{interval}"] }
   u_10m:
-    field: u
+    field: cedarkit.u
     level: { first_level_type: 103, first_level: 10 }
   v_10m:
-    field: v
+    field: cedarkit.v
     level: { first_level_type: 103, first_level: 10 }
 
 layers:

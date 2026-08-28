@@ -7,7 +7,7 @@ params:
 
 data:
   rain:
-    field: apcp
+    field: cedarkit.rain
     transforms:
       - { op: time_diff, args: ["{interval}"] }
 

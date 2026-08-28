@@ -73,7 +73,7 @@ def test_t2m_recipe_loads_through_provider(monkeypatch):
         start_time=pd.Timestamp("2026-01-01"), forecast_time=pd.Timedelta(hours=6),
     )
     assert result.t2m.item() == 0.0  # recipe's existing K -> C transform
-    assert reader.query == t_2m_info.to_field_query()
+    assert reader.query == reki.resolve_parameter("cedarkit.t2m").query
 
 
 def test_python_plot_loads_through_provider(monkeypatch):

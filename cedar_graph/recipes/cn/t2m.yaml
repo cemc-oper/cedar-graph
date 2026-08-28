@@ -4,7 +4,7 @@ domain: { default: east_asia, area: cn_area }
 
 data:
   t2m:
-    field: t2m
+    field: cedarkit.t2m
     transforms:
       - { op: style_units }      # celsius：K -> C（t2m.yml units）
 

@@ -5,12 +5,12 @@ domain: { default: east_asia, area: cn_area }
 
 data:
   u_10m:
-    field: u
+    field: cedarkit.u
     level: { first_level_type: 103, first_level: 10 }    # heightAboveGround 10m
     transforms:
       - { op: unit_scale, args: [2.5] }
   v_10m:
-    field: v
+    field: cedarkit.v
     level: { first_level_type: 103, first_level: 10 }
     transforms:
       - { op: unit_scale, args: [2.5] }

@@ -63,9 +63,18 @@ class FieldInfo:
     level_type: Optional[Union[str, Dict[str, int]]] = None
     level: Optional[Union[int, float, Dict[str, int]]] = None
     additional_keys: Optional[Dict[str, Union[str, int, float]]] = None
+    parameter_id: Optional[str] = None
 
     def to_field_query(self):
         """Adapt the legacy field table to reki's immutable query contract."""
+        if self.parameter_id is not None:
+            from reki import resolve_parameter
+            return resolve_parameter(
+                self.parameter_id,
+                level_type=self.level_type,
+                level=self.level,
+                extra=self.additional_keys or {},
+            ).query
         from reki import FieldQuery
         return FieldQuery(
             parameter=self.parameter.get_parameter(),
@@ -73,6 +82,21 @@ class FieldInfo:
             level=self.level,
             extra=self.additional_keys or {},
         )
+
+
+def field_info_from_parameter(parameter_id: str, *, name: Optional[str] = None) -> FieldInfo:
+    """Build a legacy-shaped adapter from the authoritative reki registry."""
+    from reki import resolve_parameter
+
+    record = resolve_parameter(parameter_id).record
+    return FieldInfo(
+        name=name or record.name,
+        parameter=Parameter(
+            wgrib2_name=record.external_names[0] if record.external_names else None,
+            cemc_name=parameter_id,
+        ),
+        parameter_id=parameter_id,
+    )
 
 
 # 2米温度

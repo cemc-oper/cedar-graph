@@ -32,13 +32,13 @@ domain: { default: east_asia, area: cn_area }
 
 data:
   h_500:
-    field: h
+    field: cedarkit.h
     level: { first_level_type: 100, first_level: 500 }   # isobaricInhPa 500
     transforms:
       - { op: style_units }                              # dagpm：gpm -> 10gpm
       - { op: smth9, args: [0.5, 0.25, false], repeat: 4 }
   psl:
-    field: mslp
+    field: cedarkit.psl
     transforms:
       - { op: style_units }                              # hPa：Pa -> hPa
       - { op: smth9, args: [0.5, -0.25, false], repeat: 2 }
@@ -62,9 +62,9 @@ colorbar: { layer: 0 }
 
 每个条目是一条"取数 + 加工"声明，`field` 与 `compute` 恰好二选一：
 
-- `field` — 业务字段名，必须在引擎的字段注册表中
-  （cedar-graph 的注册表是 {data}`~cedar_graph.recipes.engine.FIELD_INFOS`，
-  键为 cemc 要素名：`t2m`、`h`、`mslp`、`u`、`v`、`apcp` …）；
+- `field` — 稳定 parameter ID，必须能由 reki 参数注册表解析，例如
+  `cedarkit.t2m`、`cedarkit.h`、`cedarkit.psl`、`cedarkit.u`。旧字段名
+  （如 `t2m`）仅作为外部历史 recipe 的兼容输入；
 - `level` — 层次选择，`first_level_type` 用 GRIB2 码表 4.5 数值码，
   `first_level` 可写 `"{param}"` 模板在运行时解析；
 - `transforms` — 顺序执行的 transform op 链，每项
@@ -162,7 +162,7 @@ domain: { default: east_asia, area: cn_area }
 
 data:
   t850:
-    field: t                                        # 业务字段名（FIELD_INFOS 注册）
+    field: cedarkit.t                               # 稳定 parameter ID
     level: { first_level_type: 100, first_level: 850 }  # isobaricInhPa 850
     transforms:
       - { op: unit_offset, args: [-273.15] }        # K -> °C

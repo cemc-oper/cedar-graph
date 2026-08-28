@@ -9,11 +9,11 @@ params:
 
 data:
   rain_total:
-    field: apcp
+    field: cedarkit.rain
     transforms:
       - { op: time_diff, args: ["{interval}"] }
   snow_total:
-    field: asnow
+    field: cedarkit.sf
     transforms:
       - { op: time_diff, args: ["{interval}"] }
       - { op: unit_scale, args: [1000] }                 # m -> mm

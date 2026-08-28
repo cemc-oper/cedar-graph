@@ -6,12 +6,12 @@ params:
   wind_level: { type: float, required: true }
 
 data:
-  cin: { field: cin }
+  cin: { field: cedarkit.cin }
   u:
-    field: u
+    field: cedarkit.u
     level: { first_level_type: 100, first_level: "{wind_level}" }
   v:
-    field: v
+    field: cedarkit.v
     level: { first_level_type: 100, first_level: "{wind_level}" }
 
 layers:

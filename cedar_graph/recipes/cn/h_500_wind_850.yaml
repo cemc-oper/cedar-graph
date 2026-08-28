@@ -4,16 +4,16 @@ domain: { default: east_asia, area: cn_area }
 
 data:
   h_500:
-    field: h
+    field: cedarkit.h
     level: { first_level_type: 100, first_level: 500 }
     transforms:
       - { op: style_units }                              # dagpm（h_500.yml units）
       - { op: smth9, args: [0.5, 0.25, false], repeat: 2 }
   u_850:
-    field: u
+    field: cedarkit.u
     level: { first_level_type: 100, first_level: 850 }
   v_850:
-    field: v
+    field: cedarkit.v
     level: { first_level_type: 100, first_level: 850 }
   ws_850:
     compute: { op: wind_speed, inputs: [u_850, v_850] }

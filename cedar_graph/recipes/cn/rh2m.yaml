@@ -3,7 +3,7 @@ name: "2m Relative Humidity(%)"
 domain: { default: east_asia, area: cn_area }
 
 data:
-  rh2m: { field: rh2m }
+  rh2m: { field: cedarkit.rh2m }
 
 layers:
   - field: rh2m
