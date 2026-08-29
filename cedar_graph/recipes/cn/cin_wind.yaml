@@ -1,25 +1,55 @@
-# CIN + 风羽（参数化层次）。
-name: "CIN & {wind_level}hPa Wind(m/s)"
-domain: { default: east_asia, area: cn_area }
-
-params:
-  wind_level: { type: float, required: true }
-
-data:
-  cin: { field: cedarkit.cin }
-  u:
-    field: cedarkit.u
-    level: { first_level_type: 100, first_level: "{wind_level}" }
-  v:
-    field: cedarkit.v
-    level: { first_level_type: 100, first_level: "{wind_level}" }
-
-layers:
+api_version: cedarkit.plots/v2
+kind: PlotRecipe
+metadata:
+  annotations:
+    cedarkit.plots/migrated-from: v1
+  labels: {}
+  name: cn.cin_wind
+  title: CIN & {wind_level}hPa Wind(m/s)
+spec:
+  colorbar:
+    layer: 0
+  data:
+    cin:
+      field:
+        parameter: cedarkit.cin
+      legacy_unit_compatibility: false
+      transforms: []
+      units: J/kg
+    u:
+      field:
+        level:
+          first_level: '{params.wind_level}'
+          first_level_type: 100
+        parameter: cedarkit.u
+      legacy_unit_compatibility: false
+      transforms: []
+      units: m/s
+    v:
+      field:
+        level:
+          first_level: '{params.wind_level}'
+          first_level_type: 100
+        parameter: cedarkit.v
+      legacy_unit_compatibility: false
+      transforms: []
+      units: m/s
+  domain:
+    area: cn_area
+    default: east_asia
+  layers:
   - field: cin
     style: cin
-  - vector: { u: u, v: v }
+  - layer:
+    - 0
     style: wind:cn
-    layer: [0]
-
-title: { graph_name: "CIN & {wind_level}hPa Wind(m/s)", area_prefix: true }
-colorbar: { layer: 0 }
+    vector:
+      u: u
+      v: v
+  params:
+    wind_level:
+      required: true
+      type: float
+  title:
+    area_prefix: true
+    graph_name: CIN & {params.wind_level}hPa Wind(m/s)

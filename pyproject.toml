@@ -44,6 +44,15 @@ Repository = "https://github.com/cemc-oper/cedar-graph.git"
 [project.entry-points."cedarkit.plots.styles"]
 cn = "cedar_graph.styles"
 
+[project.entry-points."cedarkit.plots.recipes"]
+cedar_graph = "cedar_graph.recipes.plugins:recipe_provider"
+
+[project.entry-points."cedarkit.plots.ops"]
+cedar_graph = "cedar_graph.recipes.plugins:op_descriptors"
+
+[project.entry-points."cedarkit.plots.domains"]
+cedar_graph = "cedar_graph.recipes.plugins:domain_descriptors"
+
 [project.optional-dependencies]
 test = ["pytest"]
 cov = ["pytest-cov", "codecov"]

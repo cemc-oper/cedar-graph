@@ -1,30 +1,72 @@
-# 10 米风 + 风速。u/v 按业务惯例放大 2.5 倍画风羽；风速由放大后分量
-# 计算再除回（与原 wind_10m 模块一致）。
-name: "10m Wind, 10m Wind Speed(m/s, shadow)"
-domain: { default: east_asia, area: cn_area }
-
-data:
-  u_10m:
-    field: cedarkit.u
-    level: { first_level_type: 103, first_level: 10 }    # heightAboveGround 10m
-    transforms:
-      - { op: unit_scale, args: [2.5] }
-  v_10m:
-    field: cedarkit.v
-    level: { first_level_type: 103, first_level: 10 }
-    transforms:
-      - { op: unit_scale, args: [2.5] }
-  ws_10m:
-    compute: { op: wind_speed, inputs: [u_10m, v_10m] }
-    transforms:
-      - { op: unit_scale, args: [0.4] }                  # / 2.5
-
-layers:
+api_version: cedarkit.plots/v2
+kind: PlotRecipe
+metadata:
+  annotations:
+    cedarkit.plots/migrated-from: v1
+  labels: {}
+  name: cn.wind_10m
+  title: 10m Wind, 10m Wind Speed(m/s, shadow)
+spec:
+  colorbar:
+    layer: 0
+  data:
+    u_10m:
+      field:
+        level:
+          first_level: 10
+          first_level_type: 103
+        parameter: cedarkit.u
+      legacy_unit_compatibility: false
+      transforms:
+      - args:
+        - 2.5
+        kwargs: {}
+        op: unit_scale
+        repeat: 1
+      units: m/s
+    v_10m:
+      field:
+        level:
+          first_level: 10
+          first_level_type: 103
+        parameter: cedarkit.v
+      legacy_unit_compatibility: false
+      transforms:
+      - args:
+        - 2.5
+        kwargs: {}
+        op: unit_scale
+        repeat: 1
+      units: m/s
+    ws_10m:
+      compute:
+        args: []
+        inputs:
+        - u_10m
+        - v_10m
+        kwargs: {}
+        op: wind_speed
+        repeat: 1
+      legacy_unit_compatibility: false
+      transforms:
+      - args:
+        - 0.4
+        kwargs: {}
+        op: unit_scale
+        repeat: 1
+  domain:
+    area: cn_area
+    default: east_asia
+  layers:
   - field: ws_10m
     style: ws_10m
-  - vector: { u: u_10m, v: v_10m }
+  - layer:
+    - 0
     style: wind:cn
-    layer: [0]
-
-title: { graph_name: "10m Wind, 10m Wind Speed(m/s, shadow)" }
-colorbar: { layer: 0 }
+    vector:
+      u: u_10m
+      v: v_10m
+  params: {}
+  title:
+    area_prefix: false
+    graph_name: 10m Wind, 10m Wind Speed(m/s, shadow)

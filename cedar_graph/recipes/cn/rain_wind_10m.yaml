@@ -1,39 +1,68 @@
-# 间隔累计降水 + 10 米风羽。降水色标按间隔时段选择（1/3/6/12/24h）；
-# else 落到 24h 色标（原实现对不支持的时段直接报错——评审记录的有意偏差，
-# 引擎要求 select 穷尽）。
-name: "surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h"
-domain: { default: east_asia, area: cn_area }
-
-params:
-  interval: { type: timedelta, required: true }
-
-data:
-  rain:
-    field: cedarkit.rain
-    transforms:
-      - { op: time_diff, args: ["{interval}"] }
-  u_10m:
-    field: cedarkit.u
-    level: { first_level_type: 103, first_level: 10 }
-  v_10m:
-    field: cedarkit.v
-    level: { first_level_type: 103, first_level: 10 }
-
-layers:
+api_version: cedarkit.plots/v2
+kind: PlotRecipe
+metadata:
+  annotations:
+    cedarkit.plots/migrated-from: v1
+  labels: {}
+  name: cn.rain_wind_10m
+  title: 'surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h'
+spec:
+  colorbar:
+    layer: 0
+  data:
+    rain:
+      field:
+        parameter: cedarkit.rain
+      legacy_unit_compatibility: false
+      transforms:
+      - args:
+        - '{params.interval}'
+        kwargs: {}
+        op: time_diff
+        repeat: 1
+      units: mm
+    u_10m:
+      field:
+        level:
+          first_level: 10
+          first_level_type: 103
+        parameter: cedarkit.u
+      legacy_unit_compatibility: false
+      transforms: []
+      units: m/s
+    v_10m:
+      field:
+        level:
+          first_level: 10
+          first_level_type: 103
+        parameter: cedarkit.v
+      legacy_unit_compatibility: false
+      transforms: []
+      units: m/s
+  domain:
+    area: cn_area
+    default: east_asia
+  layers:
   - field: rain
     style:
-      select:
-        by: interval
-        cases:
-          "1": rain:cn_1h
-          "3": rain:cn_3h
-          "6": rain:cn_6h
-          "12": rain:cn_12h
-          "24": rain:cn_24h
-          else: rain:cn_24h
-  - vector: { u: u_10m, v: v_10m }
+      by: interval
+      cases:
+        '1': rain:cn_1h
+        '12': rain:cn_12h
+        '24': rain:cn_24h
+        '3': rain:cn_3h
+        '6': rain:cn_6h
+        else: rain:cn_24h
+  - layer:
+    - 0
     style: wind:cn
-    layer: [0]
-
-title: { graph_name: "surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h" }
-colorbar: { layer: 0 }
+    vector:
+      u: u_10m
+      v: v_10m
+  params:
+    interval:
+      required: true
+      type: timedelta
+  title:
+    area_prefix: false
+    graph_name: 'surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h'

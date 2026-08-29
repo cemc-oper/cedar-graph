@@ -1,32 +1,70 @@
-# 24 小时降水相态（雨/雨夹雪/雪）。雪雨比分类是诊断逻辑，由 cedar-graph
-# 注册的多输出 compute op prep_classify 完成（schema 为此引入 outputs 扩展，
-# 见设计文档 §4.5 评审纪要）。
-name: "surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h"
-domain: { default: east_asia, area: cn_area }
-
-params:
-  interval: { type: timedelta, default: 24h }
-
-data:
-  rain_total:
-    field: cedarkit.rain
-    transforms:
-      - { op: time_diff, args: ["{interval}"] }
-  snow_total:
-    field: cedarkit.sf
-    transforms:
-      - { op: time_diff, args: ["{interval}"] }
-      - { op: unit_scale, args: [1000] }                 # m -> mm
-  classified:
-    compute: { op: prep_classify, inputs: [rain_total, snow_total], outputs: [rain, rain_snow, snow] }
-
-layers:
+api_version: cedarkit.plots/v2
+kind: PlotRecipe
+metadata:
+  annotations:
+    cedarkit.plots/migrated-from: v1
+  labels: {}
+  name: cn.prep_24h
+  title: 'surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h'
+spec:
+  colorbar:
+    layer:
+    - 0
+    - 2
+    - 1
+  data:
+    classified:
+      compute:
+        args: []
+        inputs:
+        - rain_total
+        - snow_total
+        kwargs: {}
+        op: prep_classify
+        outputs:
+        - rain
+        - rain_snow
+        - snow
+        repeat: 1
+      legacy_unit_compatibility: false
+      transforms: []
+    rain_total:
+      field:
+        parameter: cedarkit.rain
+      legacy_unit_compatibility: false
+      transforms:
+      - args:
+        - '{params.interval}'
+        kwargs: {}
+        op: time_diff
+        repeat: 1
+      units: mm
+    snow_total:
+      field:
+        parameter: cedarkit.sf
+      legacy_unit_compatibility: false
+      transforms:
+      - args:
+        - '{params.interval}'
+        kwargs: {}
+        op: time_diff
+        repeat: 1
+      units: mm
+  domain:
+    area: cn_area
+    default: east_asia
+  layers:
   - field: rain
     style: rain:cn_prep
   - field: snow
     style: sf
   - field: rain_snow
     style: rain_snow
-
-title: { graph_name: "surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h" }
-colorbar: { layer: [0, 2, 1] }                         # rain, rain_snow, snow
+  params:
+    interval:
+      default: 24h
+      required: false
+      type: timedelta
+  title:
+    area_prefix: false
+    graph_name: 'surface cumulated precipitation: {previous_forecast_hour:03d}-{forecast_hour:03d}h'

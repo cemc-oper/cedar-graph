@@ -19,7 +19,7 @@ styles:
       level: 588
       linewidth: 1.4
       color_index: 1
-    units: dagpm
+    expected_units: dagpm
 
   cn_ws:                    # 与 850 hPa 风速叠加时（紫色线，仅加粗 588）
     type: contour
@@ -29,4 +29,4 @@ styles:
     highlight:
       level: 588
       linewidth: 1.4
-    units: dagpm
+    expected_units: dagpm

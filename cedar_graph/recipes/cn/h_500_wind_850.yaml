@@ -1,31 +1,75 @@
-# 500 hPa 高度 + 850 hPa 风与风速。风速由 u/v 经诊断 op wind_speed 计算。
-name: "500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)"
-domain: { default: east_asia, area: cn_area }
-
-data:
-  h_500:
-    field: cedarkit.h
-    level: { first_level_type: 100, first_level: 500 }
-    transforms:
-      - { op: style_units }                              # dagpm（h_500.yml units）
-      - { op: smth9, args: [0.5, 0.25, false], repeat: 2 }
-  u_850:
-    field: cedarkit.u
-    level: { first_level_type: 100, first_level: 850 }
-  v_850:
-    field: cedarkit.v
-    level: { first_level_type: 100, first_level: 850 }
-  ws_850:
-    compute: { op: wind_speed, inputs: [u_850, v_850] }
-
-layers:
+api_version: cedarkit.plots/v2
+kind: PlotRecipe
+metadata:
+  annotations:
+    cedarkit.plots/migrated-from: v1
+  labels: {}
+  name: cn.h_500_wind_850
+  title: 500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)
+spec:
+  colorbar:
+    layer: 0
+  data:
+    h_500:
+      field:
+        level:
+          first_level: 500
+          first_level_type: 100
+        parameter: cedarkit.h
+      legacy_unit_compatibility: false
+      transforms:
+      - args:
+        - 0.5
+        - 0.25
+        - false
+        kwargs: {}
+        op: smth9
+        repeat: 2
+      units: dagpm
+    u_850:
+      field:
+        level:
+          first_level: 850
+          first_level_type: 100
+        parameter: cedarkit.u
+      legacy_unit_compatibility: false
+      transforms: []
+      units: m/s
+    v_850:
+      field:
+        level:
+          first_level: 850
+          first_level_type: 100
+        parameter: cedarkit.v
+      legacy_unit_compatibility: false
+      transforms: []
+      units: m/s
+    ws_850:
+      compute:
+        args: []
+        inputs:
+        - u_850
+        - v_850
+        kwargs: {}
+        op: wind_speed
+        repeat: 1
+      legacy_unit_compatibility: false
+      transforms: []
+  domain:
+    area: cn_area
+    default: east_asia
+  layers:
   - field: ws_850
     style: ws_850
   - field: h_500
     style: h_500:cn_ws
-  - vector: { u: u_850, v: v_850 }
+  - layer:
+    - 0
     style: wind:cn
-    layer: [0]
-
-title: { graph_name: "500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)" }
-colorbar: { layer: 0 }
+    vector:
+      u: u_850
+      v: v_850
+  params: {}
+  title:
+    area_prefix: false
+    graph_name: 500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)

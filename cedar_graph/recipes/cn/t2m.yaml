@@ -1,21 +1,32 @@
-# 2 米温度。运行时按起报月份选择夏/冬色标（样式库 t2m.yml 的两个变体）。
-name: "2m Temperature (C)"
-domain: { default: east_asia, area: cn_area }
-
-data:
-  t2m:
-    field: cedarkit.t2m
-    transforms:
-      - { op: style_units }      # celsius：K -> C（t2m.yml units）
-
-layers:
+api_version: cedarkit.plots/v2
+kind: PlotRecipe
+metadata:
+  annotations:
+    cedarkit.plots/migrated-from: v1
+  labels: {}
+  name: cn.t2m
+  title: 2m Temperature (C)
+spec:
+  colorbar:
+    layer: 0
+  data:
+    t2m:
+      field:
+        parameter: cedarkit.t2m
+      legacy_unit_compatibility: false
+      transforms: []
+      units: degC
+  domain:
+    area: cn_area
+    default: east_asia
+  layers:
   - field: t2m
     style:
-      select:
-        by: start_time.month
-        cases:
-          "5,6,7,8,9": t2m:cn_summer
-          else: t2m:cn_winter
-
-title: { graph_name: "2m Temperature (C)" }
-colorbar: { layer: 0 }
+      by: start_time.month
+      cases:
+        5,6,7,8,9: t2m:cn_summer
+        else: t2m:cn_winter
+  params: {}
+  title:
+    area_prefix: false
+    graph_name: 2m Temperature (C)
