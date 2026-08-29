@@ -34,6 +34,17 @@ class _Reader:
         return None
 
 
+class _BatchReader(_Reader):
+    class _Capabilities:
+        fetch_many = True
+
+    capabilities = _Capabilities()
+
+    def fetch_many(self, queries, *, cardinality):
+        assert cardinality == "one"
+        return [_Field(self.data) for _ in queries]
+
+
 def test_provider_binds_times_and_uses_strict_api(monkeypatch):
     reader = _Reader(xr.DataArray([1], attrs={"units": "K"}))
     calls = []
@@ -43,6 +54,14 @@ def test_provider_binds_times_and_uses_strict_api(monkeypatch):
     assert result.identical(reader.data)
     assert reader.query == reki.FieldQuery(parameter="2t")
     assert calls[0][1]["forecast_time"] == "6h"
+
+
+def test_provider_batch_prototype_does_not_change_recipe_load(monkeypatch):
+    reader = _BatchReader(xr.DataArray([1]))
+    monkeypatch.setattr(reki, "from_source", lambda *args, **kwargs: reader)
+    provider = RekiProvider(reki.SourceSpec("local"))
+    result = provider._load_many([reki.FieldQuery(parameter="t"), reki.FieldQuery(parameter="u")])
+    assert len(result) == 2
 
 
 def test_loader_provider_adapts_legacy_field_info(monkeypatch):

@@ -21,3 +21,18 @@ class RekiProvider:
         selected = reader.sel(query)
         field = selected.one() if required else selected.one_or_none()
         return None if field is None else field.to_xarray()
+
+    def _load_many(self, queries, *, start_time=None, forecast_time=None,
+                   required=True):
+        """Stage-3 prototype; recipe execution does not call this yet."""
+        if not all(isinstance(query, reki.FieldQuery) for query in queries):
+            raise TypeError("queries must contain FieldQuery objects")
+        bindings = {key: value for key, value in {
+            "start_time": start_time, "forecast_time": forecast_time,
+        }.items() if value is not None}
+        reader = reki.from_source(self.source_spec, **bindings)
+        if not reader.capabilities.fetch_many:
+            raise RuntimeError("configured reki reader does not support batch fields")
+        mode = "one" if required else "one_or_none"
+        fields = reader.fetch_many(queries, cardinality=mode)
+        return [None if field is None else field.to_xarray() for field in fields]
