@@ -44,6 +44,33 @@ def rms_difference(actual_path: Path, baseline_path: Path) -> float:
     return float(np.sqrt(np.mean((actual - baseline) ** 2)))
 
 
+def image_metrics(actual_path: Path, baseline_path: Path) -> dict[str, float | int]:
+    """Return reproducible pixel-difference evidence for two PNGs."""
+    actual = load_image(actual_path)
+    baseline = load_image(baseline_path)
+    if actual.shape != baseline.shape:
+        raise ValueError(
+            f"image shape mismatch: actual {actual.shape} vs baseline {baseline.shape}"
+        )
+    difference = np.abs(actual - baseline)
+    return {
+        "rms": float(np.sqrt(np.mean(difference ** 2))),
+        "max_channel_difference": float(np.max(difference)),
+        "different_pixel_count": int(np.count_nonzero(np.any(difference > 0, axis=2))),
+    }
+
+
+def save_difference_image(actual_path: Path, baseline_path: Path, output_path: Path) -> None:
+    """Write an RGB absolute-difference heatmap for a parity-test artifact."""
+    actual = load_image(actual_path)
+    baseline = load_image(baseline_path)
+    if actual.shape != baseline.shape:
+        raise ValueError(
+            f"image shape mismatch: actual {actual.shape} vs baseline {baseline.shape}"
+        )
+    mpimg.imsave(str(output_path), np.abs(actual - baseline))
+
+
 def assert_image_match(
         actual_path: Path,
         baseline_path: Path,

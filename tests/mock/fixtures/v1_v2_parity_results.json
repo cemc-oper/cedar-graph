@@ -1,0 +1,31 @@
+{
+  "fixture": {
+    "forecast_time": "24h",
+    "source": "cedar_graph.testing.MockDataSource",
+    "start_time": "2024-07-01T00:00:00",
+    "system_name": "CMA-GFS"
+  },
+  "historical_revision": "c1c6d95e8238c830f1d4da74dac96a27f5ac2a4e",
+  "image_rms_tolerance": 0.05,
+  "images": {
+    "bli_wind": {"different_pixel_count": 51151, "max_channel_difference": 1.0, "rms": 0.04374664830699913, "status": "passed_with_clabel_tolerance"},
+    "cape_wind": {"different_pixel_count": 132498, "max_channel_difference": 0.5960784405469894, "rms": 0.007996958568975858, "status": "passed"},
+    "cin_wind": {"different_pixel_count": 17830, "max_channel_difference": 0.49019610695540905, "rms": 0.001461866307817523, "status": "passed"},
+    "height_500_mslp": {"different_pixel_count": 38115, "max_channel_difference": 1.0, "rms": 0.029043016299772066, "status": "passed_with_clabel_tolerance"},
+    "height_500_wind_850": {"different_pixel_count": 52398, "max_channel_difference": 1.0, "rms": 0.017391056324111944, "status": "passed"},
+    "k_wind": {"different_pixel_count": 32444, "max_channel_difference": 1.0, "rms": 0.024309254207804935, "status": "passed_with_clabel_tolerance"},
+    "prep_24h": {"different_pixel_count": 57778, "max_channel_difference": 1.0, "rms": 0.025119169196260196, "status": "passed_with_clabel_tolerance"},
+    "radar_reflectivity": {"different_pixel_count": 6904, "max_channel_difference": 0.9960784316062927, "rms": 0.014838439597672424, "status": "passed"},
+    "rain_24h": {"different_pixel_count": 2355, "max_channel_difference": 1.0, "rms": 0.009037689084330393, "status": "passed"},
+    "rain_wind_10m": {"different_pixel_count": 12652, "max_channel_difference": 1.0, "rms": 0.00780319529046419, "status": "passed"},
+    "rh_2m": {"different_pixel_count": 856, "max_channel_difference": 1.0, "rms": 0.0035018656487382244, "status": "passed"},
+    "t_2m": {"different_pixel_count": 151, "max_channel_difference": 0.19607844948768616, "rms": 0.0004882531698548203, "status": "passed"},
+    "wind_10m": {"different_pixel_count": 12093, "max_channel_difference": 1.0, "rms": 0.0032208720031207966, "status": "passed"}
+  },
+  "numerical": {
+    "atol": 1e-12,
+    "data_arrays_checked": 31,
+    "rtol": 1e-12,
+    "status": "passed"
+  }
+}
