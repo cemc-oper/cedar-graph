@@ -10,6 +10,8 @@ mystnb:
 
 ## 待发布
 
+- 内置 CEMC recipe 已发布为 Recipe v2 资源，并通过受控的 recipe/op/domain
+  entry point 接入。历史 Python 模块保留为公开 v1 兼容表面，供调用方迁移。
 - 新增 ReadTheDocs 文档站点（Sphinx + sphinx-book-theme），
   绘图样例由 {class}`cedar_graph.testing.MockDataSource` 在构建时
   实时执行。

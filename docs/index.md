@@ -78,6 +78,7 @@ getting_started/concepts
 tutorials/manual_plot
 tutorials/mock_data
 tutorials/recipe
+tutorials/recipe_v2_plugins
 tutorials/style_library
 ```
 
