@@ -92,7 +92,10 @@ def field_info_from_parameter(parameter_id: str, *, name: Optional[str] = None) 
     return FieldInfo(
         name=name or record.name,
         parameter=Parameter(
-            wgrib2_name=record.external_names[0] if record.external_names else None,
+            # v3 registry names are namespace -> code mappings.  The legacy
+            # adapter remains explicitly tied to WGRIB2 and must not depend
+            # on insertion order (or treat CMADaaS codes as GRIB names).
+            wgrib2_name=record.external_names.get("wgrib2"),
             cemc_name=parameter_id,
         ),
         parameter_id=parameter_id,

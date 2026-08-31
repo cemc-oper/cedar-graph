@@ -49,6 +49,7 @@ class DataLoader:
             return self.provider.load(
                 field_info.to_field_query(), start_time=start_time,
                 forecast_time=forecast_time, required=required,
+                parameter_id=field_info.parameter_id,
             )
         return self.data_source.retrieve(
             field_info=field_info, start_time=start_time,

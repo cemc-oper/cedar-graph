@@ -8,6 +8,8 @@ from cedar_graph.data import DataLoader, RekiProvider
 from cedar_graph.data.field_info import t_2m_info
 from cedar_graph.recipes.engine import RECIPE_FIELDS, get_recipe_engine
 from cedar_graph.plots.cn.t_dew_t.default import load_data as load_t_dew_t
+from cedarkit.plots.plan.nodes import RequestKey, TimeBinding
+from cedarkit.plots.plan.provider import BoundFieldRequest
 
 
 class _Field:
@@ -45,6 +47,31 @@ class _BatchReader(_Reader):
         return [_Field(self.data) for _ in queries]
 
 
+class _DirectReader:
+    def __init__(self, data):
+        self.data = data
+        self.sel_calls = 0
+
+    def sel(self, query):
+        self.sel_calls += 1
+        raise AssertionError("CMADaaS direct-result fields must not be selected")
+
+    def to_xarray(self):
+        return self.data
+
+
+def _request(parameter_id="cedarkit.t2m", *, node_id="read.t2m"):
+    return BoundFieldRequest(
+        node_id=node_id,
+        key=RequestKey(
+            provider_slot="default", parameter_id=parameter_id,
+            query=reki.resolve_parameter(parameter_id).query,
+            time_binding=TimeBinding(pd.Timestamp("2026-01-01"), pd.Timedelta(hours=6)),
+        ),
+        origin="test",
+    )
+
+
 def test_provider_binds_times_and_uses_strict_api(monkeypatch):
     reader = _Reader(xr.DataArray([1], attrs={"units": "K"}))
     calls = []
@@ -62,6 +89,42 @@ def test_provider_batch_prototype_does_not_change_recipe_load(monkeypatch):
     provider = RekiProvider(reki.SourceSpec("local"))
     result = provider._load_many([reki.FieldQuery(parameter="t"), reki.FieldQuery(parameter="u")])
     assert len(result) == 2
+
+
+def test_cmadaas_provider_binds_direct_result_without_sel(monkeypatch):
+    catalog = reki.load_catalog(plugins=False, user=False)
+    dataset = catalog.resolve("CMA-GFS-CMADaaS")
+    reader = _DirectReader(xr.DataArray([[273.15]], dims=("latitude", "longitude"), attrs={"units": "K"}))
+    calls = []
+    monkeypatch.setattr(reki, "from_source", lambda spec, **kwargs: calls.append((spec, kwargs)) or reader)
+    provider = RekiProvider(dataset)
+
+    result = provider.fetch(_request())
+
+    assert result.name == "cedarkit.t2m"
+    assert result.attrs["cmadaas_parameter"] == "TEM"
+    assert reader.sel_calls == 0
+    assert calls == [(dataset.source, {
+        "parameter": "TEM", "level_type": "heightAboveGround", "level": 2,
+        "start_time": pd.Timestamp("2026-01-01"), "forecast_time": pd.Timedelta(hours=6),
+    })]
+    assert provider.trace[-1].dataset_id == "cma_gfs_gmf_cmadaas"
+    assert provider.trace[-1].catalog_origin == "builtin"
+    assert provider.trace[-1].external_parameter == "TEM"
+
+
+def test_cmadaas_batch_fallback_and_availability_are_ordered_and_unknown(monkeypatch):
+    catalog = reki.load_catalog(plugins=False, user=False)
+    reader = _DirectReader(xr.DataArray([[273.15]], attrs={"units": "K"}))
+    monkeypatch.setattr(reki, "from_source", lambda *args, **kwargs: reader)
+    provider = RekiProvider(catalog.resolve("CMA-GFS-CMADaaS"))
+    requests = (_request(node_id="first"), _request(node_id="second"))
+
+    values = provider.fetch_many(requests)
+
+    assert [value.name for value in values] == ["cedarkit.t2m", "cedarkit.t2m"]
+    assert [item.node_id for item in provider.trace] == ["first", "second"]
+    assert provider.check_many(requests) == ["unknown", "unknown"]
 
 
 def test_loader_provider_adapts_legacy_field_info(monkeypatch):
@@ -154,7 +217,9 @@ def test_recipe_query_is_source_neutral_for_catalog_local_and_cmadaas_mock(monke
 
     def fake_from_source(spec, **kwargs):
         calls.append((spec, kwargs))
-        reader = _Reader(xr.DataArray([[273.15]], dims=("latitude", "longitude"), attrs={"units": "K"}))
+        reader = (_DirectReader if spec.name == "cmadaas" else _Reader)(
+            xr.DataArray([[273.15]], dims=("latitude", "longitude"), attrs={"units": "K"})
+        )
         readers.append(reader)
         return reader
 
@@ -173,10 +238,13 @@ def test_recipe_query_is_source_neutral_for_catalog_local_and_cmadaas_mock(monke
 
     assert calls[0][0] == local
     assert calls[1][0] == remote
-    assert calls[0][1] == calls[1][1] == {
+    assert calls[0][1] == {"start_time": start_time, "forecast_time": forecast_time}
+    assert calls[1][1] == {
+        "parameter": "TEM", "level_type": "heightAboveGround", "level": 2,
         "start_time": start_time, "forecast_time": forecast_time,
     }
-    assert readers[0].query == readers[1].query == reki.resolve_parameter("cedarkit.t2m").query
+    assert readers[0].query == reki.resolve_parameter("cedarkit.t2m").query
+    assert readers[1].sel_calls == 0
 
     rain_recipe = engine.load_recipe(
         Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / "rain_wind_10m.yaml"
