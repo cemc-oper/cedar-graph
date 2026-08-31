@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Any
+from typing import Any, Mapping
 
 import xarray as xr
 import reki
@@ -31,7 +31,8 @@ class ProviderTrace:
 
 class RekiProvider:
     """Load strict reki fields from a reusable :class:`reki.SourceSpec`."""
-    def __init__(self, source_spec: reki.SourceSpec | Any):
+    def __init__(self, source_spec: reki.SourceSpec | Any, *,
+                 region: Mapping[str, Any] | None = None):
         """Create a provider from a SourceSpec or catalog ResolvedDataset."""
         self.dataset_id = None
         self.catalog_origin = None
@@ -42,6 +43,7 @@ class RekiProvider:
         if not isinstance(source_spec, reki.SourceSpec):
             raise TypeError("source_spec must be a reki.SourceSpec")
         self.source_spec = source_spec
+        self.region = None if region is None else dict(region)
         self.trace: list[ProviderTrace] = []
 
     def _capability(self):
@@ -143,6 +145,7 @@ class RekiProvider:
                 start_time=request.key.time_binding.start_time,
                 forecast_time=request.key.time_binding.forecast_time,
                 member=request.key.time_binding.member,
+                region=self.region,
             )
             result = reki.from_source(self.source_spec, **bound.dynamic_source_kwargs()).to_xarray()
             if not isinstance(result, xr.DataArray):

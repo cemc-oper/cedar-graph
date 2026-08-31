@@ -154,12 +154,24 @@ def test_cmadaas_provider_binds_direct_result_without_sel(monkeypatch):
     assert result.attrs["cmadaas_parameter"] == "TEM"
     assert reader.sel_calls == 0
     assert calls == [(dataset.source, {
-        "parameter": "TEM", "level_type": "heightAboveGround", "level": 2,
+        "parameter": "TEM", "level_type": 103, "level": 2,
         "start_time": pd.Timestamp("2026-01-01"), "forecast_time": pd.Timedelta(hours=6),
     })]
     assert provider.trace[-1].dataset_id == "cma_gfs_gmf_cmadaas"
     assert provider.trace[-1].catalog_origin == "builtin"
     assert provider.trace[-1].external_parameter == "TEM"
+
+
+def test_cmadaas_provider_keeps_runtime_region_out_of_plan_identity(monkeypatch):
+    catalog = reki.load_catalog(plugins=False, user=False)
+    reader = _DirectReader(xr.DataArray([[273.15]], attrs={"units": "K"}))
+    calls = []
+    monkeypatch.setattr(reki, "from_source", lambda spec, **kwargs: calls.append(kwargs) or reader)
+    provider = RekiProvider(catalog.resolve("CMA-GFS-CMADaaS"), region={"type": "rect", "min_latitude": 39})
+
+    provider.fetch(_request())
+
+    assert calls[0]["region"] == {"type": "rect", "min_latitude": 39}
 
 
 def test_cmadaas_batch_fallback_and_availability_are_ordered_and_unknown(monkeypatch):
@@ -289,7 +301,7 @@ def test_recipe_query_is_source_neutral_for_catalog_local_and_cmadaas_mock(monke
     assert calls[1][0] == remote
     assert calls[0][1] == {"start_time": start_time, "forecast_time": forecast_time}
     assert calls[1][1] == {
-        "parameter": "TEM", "level_type": "heightAboveGround", "level": 2,
+        "parameter": "TEM", "level_type": 103, "level": 2,
         "start_time": start_time, "forecast_time": forecast_time,
     }
     assert readers[0].query == reki.resolve_parameter("cedarkit.t2m").query

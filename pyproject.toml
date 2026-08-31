@@ -55,6 +55,10 @@ cedar_graph = "cedar_graph.recipes.plugins:domain_descriptors"
 
 [project.optional-dependencies]
 test = ["pytest"]
+# Keep the MUSIC client behind reki's public optional feature.  cedar-graph
+# never imports nuwe-cmadaas directly; it only needs this extra when a real
+# CMADaaS-backed provider is selected.
+cmadaas = ["reki[cmadaas]>=2026.8.0"]
 cov = ["pytest-cov", "codecov"]
 docs = [
     "sphinx>=7.3",
@@ -80,6 +84,9 @@ version_file = "cedar_graph/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/mock"]
+markers = [
+    "cmadaas_service: requires the CMADaaS MUSIC service and ~/.config/cedarkit.yaml",
+]
 
 [tool.uv.sources]
 cedarkit-plots = { path = "../cedarkit-plots", editable = true }
