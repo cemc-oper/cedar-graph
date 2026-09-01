@@ -11,6 +11,7 @@ description = "Plot tool for CEMC."
 readme = "README.md"
 keywords = ["graphic", "cemc", "cedarkit"]
 license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
 dynamic = ["version"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -21,8 +22,6 @@ classifiers = [
 
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "numpy",
