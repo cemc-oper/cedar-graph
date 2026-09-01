@@ -1,6 +1,7 @@
 """Thin bridge binding cedar-graph field requirements to reki sources."""
 from __future__ import annotations
 from dataclasses import dataclass
+import json
 from time import perf_counter
 from typing import Any, Mapping
 
@@ -45,6 +46,24 @@ class RekiProvider:
         self.source_spec = source_spec
         self.region = None if region is None else dict(region)
         self.trace: list[ProviderTrace] = []
+        self._field_cache: dict[tuple[Any, ...], xr.DataArray | None] = {}
+        self._cache_hits = 0
+        self._cache_misses = 0
+
+    @property
+    def cache_info(self) -> Mapping[str, int]:
+        """Counters and entries for this provider's task-local field cache."""
+        return {"hits": self._cache_hits, "misses": self._cache_misses, "entries": len(self._field_cache)}
+
+    @staticmethod
+    def _field_cache_key(query, start_time, forecast_time, required, parameter_id):
+        query_key = json.dumps({
+            "parameter": query.parameter, "level_type": query.level_type,
+            "level": query.level, "step_type": query.step_type,
+            "time_range": query.time_range, "member": query.member,
+            "extra": dict(query.extra),
+        }, sort_keys=True, default=str)
+        return (query_key, str(start_time), str(forecast_time), required, parameter_id)
 
     def _capability(self):
         """Read the source-declared capability without mutating the source."""
@@ -74,6 +93,12 @@ class RekiProvider:
              forecast_time=None, required: bool = True, parameter_id: str | None = None):
         if not isinstance(query, reki.FieldQuery):
             raise TypeError("query must be a reki.FieldQuery")
+        cache_key = self._field_cache_key(query, start_time, forecast_time, required, parameter_id)
+        if cache_key in self._field_cache:
+            self._cache_hits += 1
+            value = self._field_cache[cache_key]
+            return None if value is None else value.copy(deep=False)
+        self._cache_misses += 1
         capability = self._capability()
         if capability is not None and capability.direct_result:
             if parameter_id is None:
@@ -88,12 +113,16 @@ class RekiProvider:
                 ),
                 origin="legacy FieldInfo adapter",
             )
-            return self._fetch_direct(request)
+            value = self._fetch_direct(request)
+            self._field_cache[cache_key] = value
+            return value.copy(deep=False)
         bindings = self._bindings(start_time=start_time, forecast_time=forecast_time)
         reader = reki.from_source(self.source_spec, **bindings)
         selected = reader.sel(query)
         field = selected.one() if required else selected.one_or_none()
-        return None if field is None else field.to_xarray()
+        value = None if field is None else field.to_xarray()
+        self._field_cache[cache_key] = value
+        return None if value is None else value.copy(deep=False)
 
     def _load_many(self, queries, *, start_time=None, forecast_time=None,
                    required=True):
