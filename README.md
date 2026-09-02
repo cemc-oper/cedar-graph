@@ -6,134 +6,161 @@
 ![GitHub License](https://img.shields.io/github/license/cemc-oper/cedar-graph)
 ![GitHub Action Workflow Status](https://github.com/cemc-oper/cedar-graph/actions/workflows/ci.yaml/badge.svg)
 
-A plotting example package using [cedarkit-plots](https://github.com/cemc-oper/cedarkit-plots).
+`cedar-graph` is a high-level plotting library for CEMC numerical weather
+prediction products, including CMA-GFS, CMA-MESO, CMA-TYM, and CMA-GEPS. Built
+on [reki](https://github.com/cemc-oper/reki), `cedarkit-comp`, and
+[cedarkit-plots](https://github.com/cemc-oper/cedarkit-plots), it packages data
+lookup, field loading, processing, and plotting into reusable product
+definitions.
 
-## Install
+> This project is at the Sandbox maturity level. Its public API, recipes, and
+> supported products may still evolve.
 
-Install using pip.
+## Features
+
+- Define most products declaratively with YAML recipes, covering data fields,
+  transformations, layers, styles, titles, and colorbars.
+- Support complex diagnostic products through Python plot modules with the same
+  public interface as recipe-backed products.
+- Run products from a compact `quick_plot` interface against a CMADaaS-mounted
+  data directory, or invoke the loading and plotting stages directly in
+  applications and notebooks.
+- Keep operational styles in a reusable CEMC style library.
+- Switch between GRIB2 data in a CMADaaS-mounted directory and deterministic
+  synthetic data for tests and documentation.
+
+## Installation
+
+Install from PyPI:
 
 ```bash
 pip install cedar-graph
 ```
 
-Or download the latest source code from GitHub repo and install the latest version.
+For development in this workspace, install dependencies and run the mock test
+suite:
 
-## Quick plot
+```bash
+cd repo/cedar-graph
+uv sync --extra test
+pytest
+```
 
-`quick_plot` can be used in CMA-HPC to draw and show picture using data from CEMC's NWP systems.
+`cedar-graph` uses `reki` and ecCodes to read GRIB2 data from a CMADaaS-mounted
+directory. The mock examples and tests do not require either. See the
+[installation guide](docs/getting_started/install.md) for details.
 
-Draw contour fill plot for 2m temperature using CMA-GFS GRIB2 data.
+## Quick plot from a CMADaaS-mounted directory
 
-```py
+`quick_plot` is the shortest path from a product name to a figure. It uses
+`LocalDataSource` and reki's `cmadaas` local-path configuration. Set
+`storage_base` to the mount point; the default below is `/CMADAAS`.
+
+```python
 from cedar_graph.quickplot import quick_plot
 
-plot_type = "cn.t_2m.default"
-plot_settings = dict(
+quick_plot(
+    plot_type="cn.t2m",
     system_name="CMA-GFS",
     start_time="2024073000",
     forecast_time="48h",
-)
-
-quick_plot(
-    plot_type=plot_type,
-    **plot_settings,
+    data_class="cmadaas",
+    storage_base="/CMADAAS",
 )
 ```
 
-Draw wind speed contour fill plot for 10m wind using CMA-MESO GRIB2 data.
+For a custom region, pass product-specific settings such as `area_name` and
+`area_range`:
 
-```py
+```python
 from cedar_graph.quickplot import quick_plot
 from cedarkit.plots.types import AreaRange
 
-plot_type = "cn.wind_10m.default"
-plot_settings = dict(
+quick_plot(
+    plot_type="cn.wind_10m",
     system_name="CMA-MESO",
     start_time="2024073000",
     forecast_time="48h",
+    data_class="cmadaas",
+    storage_base="/CMADAAS",
     area_name="NorthEast",
-    area_range=AreaRange.from_tuple((108, 137, 37, 55))
-)
-
-quick_plot(
-    plot_type=plot_type,
-    **plot_settings,
+    area_range=AreaRange.from_tuple((108, 137, 37, 55)),
 )
 ```
 
-## Manual plot
+The mounted-directory workflow is local file access; it does not use the
+CMADaaS remote service or require CMADaaS credentials. The directory layout
+must match the reki templates for the selected system.
 
-Use functions and classed in plotting modules to draw plots.
+For portable scripts, notebooks, and debugging, use a product definition with
+an explicit data source instead. The [manual plotting tutorial](docs/tutorials/manual_plot.md)
+shows the same workflow using `MockDataSource`, which works without access to
+operational data. To read mounted data in that workflow, create
+`LocalDataSource(system_name="CMA-GFS", data_class="cmadaas",
+storage_base="/CMADAAS")`.
 
-The following example runs at CMA-HPC.
-First, create a `LocalDataSource` object to get data file path from CMA-MESO at CMA-HPC.
-Next, use `load_data` and `plot` functions from `cedar_graph.plots.t_2m.default` module to draw a plot.
-Finally, use `panel.show()` method to display the result.
+## Product model
 
-```py
-import pandas as pd
+Each product is provided by either a YAML recipe under `cedar_graph/recipes/`
+or a Python module under `cedar_graph/plots/`. Both expose the same three-part
+interface:
 
-from cedar_graph.plots.cn.t_2m.default import PlotMetadata, plot, load_data
-from cedar_graph.data import LocalDataSource, DataLoader
-
-system_name = "CMA-MESO"
-start_time = pd.to_datetime("2024-07-17 00:00:00")
-forecast_time = pd.to_timedelta("24h")
-
-metadata = PlotMetadata(
-    start_time=start_time,
-    forecast_time=forecast_time,
-    system_name=system_name
-)
-
-# system -> field
-data_source = LocalDataSource(system_name=system_name)
-data_loader = DataLoader(data_source=data_source)
-plot_data = load_data(
-    data_loader=data_loader, 
-    start_time=start_time, 
-    forecast_time=forecast_time
-)
-    
-# field -> plot
-panel = plot(
-    plot_data=plot_data,
-    plot_metadata=metadata,
-)
-
-# plot -> output
-panel.show()
+```python
+PlotMetadata                 # Product metadata and product-specific options
+load_data(data_loader, ...)  # Source data to fields ready for plotting
+plot(plot_data, metadata)    # Fields to a cedarkit.plots Panel
 ```
 
-## Graph list
+The loader searches YAML recipes first, then Python modules. This makes product
+type names such as `cn.t2m`, `cn.h_500_psl`, and `cn.shr.default` consistent
+across quick plots, applications, tests, and documentation.
 
-| Category  | Plot Type           | Introduction                                                                           | 说明                        |
-|-----------|---------------------|----------------------------------------------------------------------------------------|---------------------------|
-| Normal    |                     |                                                                                        |                           |
-|           | height_500_mslp     | 500hPa geopotential height + Sea level pressure                                        | 500hPa高度场+海平面气压           |
-|           | height_500_wind_850 | 500hPa geopotential height + 850hPa wind                                               | 500hPa高度场+850hPa风场        |
-|           | t_2m                | 2m temperature                                                                         | 2米温度                      |
-|           | rh_2m               | 2m relative humidity                                                                   | 2米相对湿度                    |
-|           | wind_10m            | 10m wind                                                                               | 10米风场                     |
-| Diagnosis |                     |                                                                                        |                           |
-|           | radar_reflectivity  | Composite radar reflectivity                                                           | 雷达组合反射率                   |
-|           | div_wind            | Divergence + Wind                                                                      | 散度+风场                     |
-|           | k_wind              | K Index + Wind                                                                         | K指数+风场                    |
-|           | cin_wind            | CIN + Wind                                                                             | CIN+风场                    |
-|           | cape_wind           | CAPE + Wind                                                                            | CAPE+风场                   |
-|           | bli_wind            | Best lifted index + Wind                                                               | 最优抬升指数 + 风场               |
-|           | pte_wind            | Difference in pseudo-equivalent potential temperature between 500hPa and 850hPa + Wind | 500hPa与850hPa假相当位温之差+风场   |
-|           | qv_div              | Moisture flux divergence                                                               | 水汽通量散度                    |
-|           | shr                 | Vertical wind shear (0-1km/0-3km/0-6km)                                                | 垂直风切变 (0-1km/0-3km/0-6km) |
-|           | t_dew_t             | Temperature-dew point difference                                                       | 温度和露点差                    |
-| Rain      |                     |                                                                                        |                           |
-|           | prep_24h            | 24h precipitation (precipitation phase)                                                | 24小时降水 (多相态)              |
-|           | rain_24h            | 24h rain                                                                               | 24小时降水                    |
-|           | rain_wind_10m       | 1/3/6/12/24h rain + 10m wind                                                           | 1/3/6/12/24小时降水+10米风场     |
+Available products include surface fields, upper-air analyses, precipitation,
+convection diagnostics, wind shear, and moisture diagnostics. Browse the
+[gallery](docs/gallery/index.md) for the complete, rendered catalogue.
 
+## Documentation
 
-## LICENSE
+- [Installation](docs/getting_started/install.md): runtime dependencies and
+  source-based development.
+- [Core concepts](docs/getting_started/concepts.md): data sources, loaders,
+  product definitions, and `quick_plot`.
+- [Quick plotting](docs/tutorials/quick_plot.md): CMADaaS-mounted-directory
+  usage and product-specific arguments.
+- [Manual plotting](docs/tutorials/manual_plot.md): explicitly load data and
+  render a product, including a portable mock-data example.
+- [Mock data](docs/tutorials/mock_data.md): deterministic synthetic data used
+  by tests and documentation.
+- [Recipes and plugins](docs/tutorials/recipe.md): write and extend YAML
+  product definitions.
+- [Style library](docs/tutorials/style_library.md): manage CEMC plotting
+  styles.
+- [Gallery](docs/gallery/index.md): rendered examples of all supported
+  products.
+- [API reference](docs/api/index.md): generated Python API documentation.
+- [Changelog](docs/changelog.md): release history.
+
+## Documentation structure
+
+Keep this README as the project entry point. Detailed user and maintainer
+documentation belongs under `docs/`:
+
+```text
+README.md                         Project overview, installation, mounted-directory quick plot, documentation links
+docs/
+├── getting_started/              Installation and shared concepts
+├── tutorials/                    Quick plotting, manual workflow, mock data, recipes, and styles
+├── gallery/                      Runnable product examples, organized by final figure
+├── api/                          Code-synchronized module and object reference
+└── changelog.md                  Release history
+```
+
+When adding a product, include a recipe or plot module, tests using mock data,
+and a gallery entry. Add API documentation for stable public interfaces rather
+than duplicating tutorial content.
+
+## License
 
 Copyright &copy; 2024-2026, developers at cemc-oper.
 
-`cedar-graph` is licensed under [Apache License V2.0](./LICENSE)
+`cedar-graph` is licensed under the [Apache License 2.0](LICENSE).
