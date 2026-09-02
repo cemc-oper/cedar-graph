@@ -31,7 +31,7 @@ dependencies = [
     "xarray",
     "loguru",
     'importlib-metadata; python_version<"3.8"',
-    "reki>=2026.8.0",
+    "reki>=2026.9.0",
     "cedarkit-comp>=2026.7.0",
     "cedarkit-plots>=2026.9.0",
 ]
@@ -57,7 +57,7 @@ test = ["pytest"]
 # Keep the MUSIC client behind reki's public optional feature.  cedar-graph
 # never imports nuwe-cmadaas directly; it only needs this extra when a real
 # CMADaaS-backed provider is selected.
-cmadaas = ["reki[cmadaas]>=2026.8.0"]
+cmadaas = ["reki[cmadaas]>=2026.9.0"]
 cov = ["pytest-cov", "codecov"]
 docs = [
     "sphinx>=7.3",
