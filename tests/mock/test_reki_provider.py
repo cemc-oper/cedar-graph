@@ -209,7 +209,7 @@ def test_t2m_recipe_loads_through_provider(monkeypatch):
     monkeypatch.setattr(reki, "from_source", lambda *args, **kwargs: reader)
     provider = RekiProvider(reki.SourceSpec("local", args=("fixture",)))
     engine = get_recipe_engine()
-    recipe_path = Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
+    recipe_path = Path(__file__).parents[2] / "src" / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
     module = engine.build_module(engine.load_recipe(recipe_path))
     result = module.load_data(
         data_loader=DataLoader(provider=provider),
@@ -238,7 +238,7 @@ def test_python_plot_loads_through_provider(monkeypatch):
 def test_t2m_recipe_provider_render_matches_legacy_data(monkeypatch, mock_data_source, start_time, forecast_time, tmp_path):
     """Provider pilot preserves raw fields and completes a render smoke test."""
     engine = get_recipe_engine()
-    recipe_path = Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
+    recipe_path = Path(__file__).parents[2] / "src" / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
     module = engine.build_module(engine.load_recipe(recipe_path))
     legacy_loader = DataLoader(data_source=mock_data_source)
     legacy = module.load_data(legacy_loader, start_time, forecast_time)
@@ -286,7 +286,7 @@ def test_recipe_query_is_source_neutral_for_catalog_local_and_cmadaas_mock(monke
 
     monkeypatch.setattr(reki, "from_source", fake_from_source)
     engine = get_recipe_engine()
-    recipe_path = Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
+    recipe_path = Path(__file__).parents[2] / "src" / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
     module = engine.build_module(engine.load_recipe(recipe_path))
     start_time = pd.Timestamp("2026-01-01")
     forecast_time = pd.Timedelta(hours=6)
@@ -308,7 +308,7 @@ def test_recipe_query_is_source_neutral_for_catalog_local_and_cmadaas_mock(monke
     assert readers[1].sel_calls == 0
 
     rain_recipe = engine.load_recipe(
-        Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / "rain_wind_10m.yaml"
+        Path(__file__).parents[2] / "src" / "cedar_graph" / "recipes" / "cn" / "rain_wind_10m.yaml"
     )
     rain = rain_recipe.data["rain"]
     u_10m = rain_recipe.data["u_10m"]
@@ -337,7 +337,7 @@ def test_recipe_v2_plan_has_stable_identity_and_matches_local_and_cmadaas_mock(m
         return _RecipeLocalReader(kwargs["forecast_time"])
 
     monkeypatch.setattr(reki, "from_source", fake_from_source)
-    recipe_path = Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn"
+    recipe_path = Path(__file__).parents[2] / "src" / "cedar_graph" / "recipes" / "cn"
     context = CompileContext(
         start_time="2026-01-01T00:00Z", forecast_time="24h",
     )

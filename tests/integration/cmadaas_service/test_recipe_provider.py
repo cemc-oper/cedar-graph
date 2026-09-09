@@ -34,7 +34,7 @@ def test_t2m_recipe_v2_loads_through_cmadaas_provider():
     if not Path("~/.config/cedarkit.yaml").expanduser().exists():
         pytest.skip("CMADaaS config ~/.config/cedarkit.yaml not found")
 
-    recipe_path = Path(__file__).parents[3] / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
+    recipe_path = Path(__file__).parents[3] / "src" / "cedar_graph" / "recipes" / "cn" / "t2m.yaml"
     plan = compile_recipe(
         load_recipe(recipe_path),
         CompileContext(

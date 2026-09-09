@@ -71,15 +71,18 @@ docs = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 exclude = ["tests*", "docs", "example"]
 namespaces = false
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools_scm]
-version_file = "cedar_graph/_version.py"
+version_file = "src/cedar_graph/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/mock"]

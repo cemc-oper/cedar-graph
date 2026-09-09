@@ -70,7 +70,7 @@ def load_v1_v2(plot_name: str, data_source: Any, start_time: pd.Timestamp, forec
     legacy_module = load_legacy_module(plot_name)
     loader = DataLoader(data_source=data_source)
     legacy = legacy_module.load_data(loader, start_time, forecast_time, **params)
-    recipe_path = Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn" / f"{spec['recipe']}.yaml"
+    recipe_path = Path(__file__).parents[2] / "src" / "cedar_graph" / "recipes" / "cn" / f"{spec['recipe']}.yaml"
     recipe_module = get_recipe_engine().build_module(get_recipe_engine().load_recipe(recipe_path))
     current = recipe_module.load_data(loader, start_time, forecast_time, **params)
     return legacy_module, legacy, recipe_module, current

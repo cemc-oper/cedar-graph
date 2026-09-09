@@ -128,7 +128,7 @@ celerybeat.pid
 
 .vscode
 
-cedar_graph/_version.py
+src/cedar_graph/_version.py
 
 tests/cma_hpc/run_base_dir
 tests/mock/run_base_dir

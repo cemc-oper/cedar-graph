@@ -7,7 +7,7 @@ from cedar_graph.recipes.engine import FIELD_INFOS, OVERRIDE_FIELDS, get_recipe_
 
 def test_all_builtin_recipe_fields_are_parameter_ids_and_load():
     engine = get_recipe_engine()
-    recipe_dir = Path(__file__).parents[2] / "cedar_graph" / "recipes" / "cn"
+    recipe_dir = Path(__file__).parents[2] / "src" / "cedar_graph" / "recipes" / "cn"
     recipes = [engine.load_recipe(path) for path in sorted(recipe_dir.glob("*.yaml"))]
     fields = {
         spec.field

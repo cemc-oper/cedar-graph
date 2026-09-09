@@ -31,7 +31,7 @@ IN_CI = os.environ.get("CI", "").lower() in ("true", "1", "yes")
 
 def _render_recipe(recipe_name, params, mock_data_source, start_time, forecast_time, system_name, sample_step, output_path):
     engine = get_recipe_engine()
-    recipe_path = Path(__file__).parents[4] / "cedar_graph" / "recipes" / "cn" / f"{recipe_name}.yaml"
+    recipe_path = Path(__file__).parents[4] / "src" / "cedar_graph" / "recipes" / "cn" / f"{recipe_name}.yaml"
     module = engine.build_module(engine.load_recipe(recipe_path))
 
     data_loader = DataLoader(data_source=mock_data_source)
