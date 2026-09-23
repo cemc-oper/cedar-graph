@@ -11,7 +11,10 @@ from cedarkit.plots.workflow.recipe import LoadedRecipe
 from cedarkit.plots.workflow.render import render_result
 
 
-_MIGRATED = {"cn.t2m": "workflow.cn.t2m"}
+_MIGRATED = {f"cn.{name}": f"workflow.cn.{name}" for name in (
+    "bli_wind", "cape_wind", "cdbz", "cin_wind", "h_500_psl", "h_500_wind_850",
+    "kidx_wind", "prep_24h", "rain_24h", "rain_wind_10m", "rh2m", "t2m", "wind_10m",
+)}
 
 
 @dataclass(frozen=True)

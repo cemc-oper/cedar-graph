@@ -1,0 +1,34 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.rh2m
+  title: 2m Relative Humidity(%)
+spec:
+  params: {}
+  data:
+    rh2m:
+      field:
+        parameter: cedarkit.rh2m
+      units: '%'
+      source_units: '%'
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: rh2m_0
+        method: contourf
+        field: rh2m
+        style: cemc.rh2m:cn
+        targets: all
+        data_crs: plate_carree
+      titles:
+      - id: heading
+        text: 2m Relative Humidity(%)
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: rh2m_0
+      label: '%'
+  display:
+    template: east_asia

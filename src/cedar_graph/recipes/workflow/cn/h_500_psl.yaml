@@ -1,0 +1,64 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.h_500_psl
+  title: 500 hPa Height(10gpm), Sea Level Pressure(hPa,shadow)
+spec:
+  params: {}
+  data:
+    h_500:
+      field:
+        level:
+          first_level: 500
+          first_level_type: 100
+        parameter: cedarkit.h
+      transforms:
+      - args:
+        - 0.5
+        - 0.25
+        - false
+        kwargs: {}
+        op: smth9
+        repeat: 4
+      units: dagpm
+      source_units: Gpm
+    psl:
+      field:
+        parameter: cedarkit.psl
+      transforms:
+      - args:
+        - 0.5
+        - -0.25
+        - false
+        kwargs: {}
+        op: smth9
+        repeat: 2
+      units: hPa
+      source_units: Pa
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: psl_0
+        method: contourf
+        field: psl
+        style: cemc.psl:cn
+        targets: all
+        data_crs: plate_carree
+      - id: h_500_1
+        method: contour
+        field: h_500
+        style: cemc.h_500:cn_dagpm
+        targets: all
+        data_crs: plate_carree
+      titles:
+      - id: heading
+        text: 500 hPa Height(10gpm), Sea Level Pressure(hPa,shadow)
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: psl_0
+      label: hPa
+  display:
+    template: east_asia

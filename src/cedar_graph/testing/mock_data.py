@@ -71,13 +71,21 @@ class MockDataSource(DataSource):
         for request in requests:
             self.workflow_requests.append(request)
             key = request.key
-            if key.parameter_id != "cedarkit.t2m":
+            supported = {"bli", "cape", "cdbz", "cin", "h", "psl", "kidx", "rain", "sf",
+                         "rh2m", "u", "v", "t2m"}
+            if key.parameter_id.removeprefix("cedarkit.") not in supported:
                 raise ValueError(f"unsupported mock workflow parameter {key.parameter_id!r}")
+            info = field_info_from_parameter(key.parameter_id)
+            info.name = {"psl": "mslp", "cdbz": "cr", "kidx": "k", "rain": "apcp",
+                         "sf": "asnow", "cin": "cape"}.get(info.name, info.name)
+            info.level_type = key.query.level_type
+            info.level = key.query.level
             field = self.retrieve(
-                field_info_from_parameter(key.parameter_id, name="t2m"),
+                info,
                 start_time=pd.Timestamp(key.start_time), forecast_time=pd.Timedelta(key.forecast_time))
-            field.attrs = {**field.attrs, "units": resolve_parameter(key.parameter_id).record.unit,
-                           "standard_name": "air_temperature"}
+            field.attrs = {**field.attrs, "units": resolve_parameter(key.parameter_id).record.unit}
+            if key.parameter_id == "cedarkit.t2m":
+                field.attrs["standard_name"] = "air_temperature"
             result.append(field)
         return result
 
@@ -361,7 +369,7 @@ class MockDataSource(DataSource):
           have a broader, faster jet without the SW tongue.
         """
         is_surface = (
-            level_type == "heightAboveGround"
+            level_type in ("heightAboveGround", 103, "103")
             or (level_type is None and level == 10)
         )
 

@@ -1,0 +1,62 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.cin_wind
+  title: CIN & {params.wind_level}hPa Wind(m/s)
+spec:
+  params:
+    wind_level:
+      required: true
+      type: float
+  data:
+    cin:
+      field:
+        parameter: cedarkit.cin
+      units: J/kg
+      source_units: J/kg
+    u:
+      field:
+        level:
+          first_level: '{params.wind_level}'
+          first_level_type: 100
+        parameter: cedarkit.u
+      units: m/s
+      source_units: m/s
+    v:
+      field:
+        level:
+          first_level: '{params.wind_level}'
+          first_level_type: 100
+        parameter: cedarkit.v
+      units: m/s
+      source_units: m/s
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: cin_0
+        method: contourf
+        field: cin
+        style: cemc.cin:cn
+        targets: all
+        data_crs: plate_carree
+      - id: wind_1
+        method: barbs
+        vector:
+          u: u
+          v: v
+        style: cemc.wind:cn
+        targets: main
+        data_crs: plate_carree
+        vector_basis: earth
+      titles:
+      - id: heading
+        text: CIN & {params.wind_level}hPa Wind(m/s)
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: cin_0
+      label: J/kg
+  display:
+    template: east_asia

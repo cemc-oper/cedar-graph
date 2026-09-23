@@ -1,0 +1,68 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.cape_wind
+  title: CAPE(J/kg) & {params.wind_level}hPa Wind(m/s)
+spec:
+  params:
+    wind_level:
+      required: true
+      type: float
+  data:
+    cape:
+      field:
+        parameter: cedarkit.cape
+      units: J/kg
+      source_units: J/kg
+    u:
+      field:
+        level:
+          first_level: '{params.wind_level}'
+          first_level_type: 100
+        parameter: cedarkit.u
+      units: m/s
+      source_units: m/s
+    v:
+      field:
+        level:
+          first_level: '{params.wind_level}'
+          first_level_type: 100
+        parameter: cedarkit.v
+      units: m/s
+      source_units: m/s
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: cape_0
+        method: contourf
+        field: cape
+        style: cemc.cape:cn_fill
+        targets: all
+        data_crs: plate_carree
+      - id: cape_1
+        method: contour
+        field: cape
+        style: cemc.cape:cn_line
+        targets: all
+        data_crs: plate_carree
+      - id: wind_2
+        method: barbs
+        vector:
+          u: u
+          v: v
+        style: cemc.wind:cn
+        targets: main
+        data_crs: plate_carree
+        vector_basis: earth
+      titles:
+      - id: heading
+        text: CAPE(J/kg) & {params.wind_level}hPa Wind(m/s)
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: cape_0
+      label: J/kg
+  display:
+    template: east_asia

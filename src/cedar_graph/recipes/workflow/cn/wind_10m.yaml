@@ -1,0 +1,82 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.wind_10m
+  title: 10m Wind, 10m Wind Speed(m/s, shadow)
+spec:
+  params: {}
+  data:
+    u_10m:
+      field:
+        level:
+          first_level: 10
+          first_level_type: 103
+        parameter: cedarkit.u
+      transforms:
+      - args:
+        - 2.5
+        kwargs: {}
+        op: unit_scale
+        repeat: 1
+      units: m/s
+      source_units: m/s
+    v_10m:
+      field:
+        level:
+          first_level: 10
+          first_level_type: 103
+        parameter: cedarkit.v
+      transforms:
+      - args:
+        - 2.5
+        kwargs: {}
+        op: unit_scale
+        repeat: 1
+      units: m/s
+      source_units: m/s
+    ws_10m:
+      compute:
+        args: []
+        inputs:
+        - u_10m
+        - v_10m
+        kwargs: {}
+        op: wind_speed
+      transforms:
+      - args:
+        - 0.4
+        kwargs: {}
+        op: unit_scale
+        repeat: 1
+      source_units: m/s
+      units: m/s
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: ws_10m_0
+        method: contourf
+        field: ws_10m
+        style: cemc.ws_10m:cn
+        targets: all
+        data_crs: plate_carree
+      - id: wind_1
+        method: barbs
+        vector:
+          u: u_10m
+          v: v_10m
+        style: cemc.wind:cn
+        targets: main
+        data_crs: plate_carree
+        vector_basis: earth
+      titles:
+      - id: heading
+        text: 10m Wind, 10m Wind Speed(m/s, shadow)
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: ws_10m_0
+      label: m/s
+  display:
+    template: east_asia

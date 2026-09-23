@@ -1,0 +1,74 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.rain_wind_10m
+  title: 'surface cumulated precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
+spec:
+  params:
+    interval:
+      type: enum
+      required: true
+      values:
+      - 1h
+      - 3h
+      - 6h
+      - 12h
+      - 24h
+  data:
+    rain:
+      field:
+        parameter: cedarkit.rain
+      transforms:
+      - args:
+        - '{params.interval}'
+        kwargs: {}
+        op: time_diff
+        repeat: 1
+      units: mm
+      source_units: mm
+    u_10m:
+      field:
+        level:
+          first_level: 10
+          first_level_type: 103
+        parameter: cedarkit.u
+      units: m/s
+      source_units: m/s
+    v_10m:
+      field:
+        level:
+          first_level: 10
+          first_level_type: 103
+        parameter: cedarkit.v
+      units: m/s
+      source_units: m/s
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: rain_0
+        method: contourf
+        field: rain
+        style: cemc.rain:cn_{params.interval}
+        targets: all
+        data_crs: plate_carree
+      - id: wind_1
+        method: barbs
+        vector:
+          u: u_10m
+          v: v_10m
+        style: cemc.wind:cn
+        targets: main
+        data_crs: plate_carree
+        vector_basis: earth
+      titles:
+      - id: heading
+        text: 'surface cumulated precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: rain_0
+      label: mm
+  display:
+    template: east_asia

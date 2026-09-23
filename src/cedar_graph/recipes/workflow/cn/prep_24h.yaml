@@ -1,0 +1,122 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.prep_24h
+  title: 'surface cumulated precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
+spec:
+  params:
+    interval:
+      type: enum
+      default: 24h
+      values:
+      - 24h
+  data:
+    classified:
+      compute:
+        args: []
+        inputs:
+        - rain_total
+        - snow_total
+        kwargs: {}
+        op: prep_classify
+        outputs:
+        - rain
+        - rain_snow
+        - snow
+    rain_total:
+      field:
+        parameter: cedarkit.rain
+      transforms:
+      - args:
+        - '{params.interval}'
+        kwargs: {}
+        op: time_diff
+        repeat: 1
+      units: mm
+      source_units: mm
+    snow_total:
+      field:
+        parameter: cedarkit.sf
+      transforms:
+      - args:
+        - '{params.interval}'
+        kwargs: {}
+        op: time_diff
+        repeat: 1
+      units: mm
+      source_units: m
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: rain_0
+        method: contourf
+        field: rain
+        style: cemc.rain:cn_prep
+        targets: all
+        data_crs: plate_carree
+      - id: snow_1
+        method: contourf
+        field: snow
+        style: cemc.sf:cn
+        targets: all
+        data_crs: plate_carree
+      - id: rain_snow_2
+        method: contourf
+        field: rain_snow
+        style: cemc.rain_snow:cn
+        targets: all
+        data_crs: plate_carree
+      titles:
+      - id: heading
+        text: 'surface cumulated precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
+    colorbars:
+    - id: rain_bar
+      plots:
+      - chart: main
+        plot: rain_0
+      label: mm
+    - id: snow_bar
+      plots:
+      - chart: main
+        plot: snow_1
+      label: mm
+    - id: rain_snow_bar
+      plots:
+      - chart: main
+        plot: rain_snow_2
+      label: mm
+  display:
+    template: east_asia
+    decorations:
+      colorbars:
+        rain_bar:
+          position:
+            space: figure
+            bounds:
+            - 0.16
+            - 0.025
+            - 0.63
+            - 0.012
+          orientation: horizontal
+          tick_fontsize: 6
+        snow_bar:
+          position:
+            space: figure
+            bounds:
+            - 0.16
+            - 0.08
+            - 0.63
+            - 0.012
+          orientation: horizontal
+          tick_fontsize: 6
+        rain_snow_bar:
+          position:
+            space: figure
+            bounds:
+            - 0.16
+            - 0.135
+            - 0.63
+            - 0.012
+          orientation: horizontal
+          tick_fontsize: 6

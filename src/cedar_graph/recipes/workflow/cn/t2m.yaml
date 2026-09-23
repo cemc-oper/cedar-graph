@@ -8,27 +8,34 @@ spec:
     style_variant:
       type: enum
       default: cn_summer
-      values: [cn_summer, cn_winter]
+      values:
+      - cn_summer
+      - cn_winter
   data:
     temperature:
-      field: {parameter: cedarkit.t2m}
+      field:
+        parameter: cedarkit.t2m
       units: degC
       temperature_kind: absolute
+      source_units: K
   content:
     charts:
-      - id: main
-        plots:
-          - id: temperature
-            method: contourf
-            field: temperature
-            style: "cemc.t2m:{params.style_variant}"
-            targets: all
-            data_crs: plate_carree
-        titles:
-          - {id: heading, text: "2m Temperature (°C)"}
-    colorbars:
+    - id: main
+      plots:
       - id: temperature
-        plots: [{chart: main, plot: temperature}]
-        label: °C
+        method: contourf
+        field: temperature
+        style: cemc.t2m:{params.style_variant}
+        targets: all
+        data_crs: plate_carree
+      titles:
+      - id: heading
+        text: 2m Temperature (°C)
+    colorbars:
+    - id: temperature
+      plots:
+      - chart: main
+        plot: temperature
+      label: °C
   display:
     template: east_asia

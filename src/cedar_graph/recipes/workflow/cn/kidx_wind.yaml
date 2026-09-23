@@ -1,0 +1,69 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.kidx_wind
+  title: K index(shadow) {params.wind_level}hPa Wind(m/s)
+spec:
+  params:
+    wind_level:
+      required: true
+      type: float
+  data:
+    kidx:
+      field:
+        parameter: cedarkit.kidx
+      units: K
+      temperature_kind: difference
+      source_units: K
+    u:
+      field:
+        level:
+          first_level: '{params.wind_level}'
+          first_level_type: 100
+        parameter: cedarkit.u
+      units: m/s
+      source_units: m/s
+    v:
+      field:
+        level:
+          first_level: '{params.wind_level}'
+          first_level_type: 100
+        parameter: cedarkit.v
+      units: m/s
+      source_units: m/s
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: kidx_0
+        method: contourf
+        field: kidx
+        style: cemc.kidx:cn_fill
+        targets: all
+        data_crs: plate_carree
+      - id: kidx_1
+        method: contour
+        field: kidx
+        style: cemc.kidx:cn_line
+        targets: all
+        data_crs: plate_carree
+      - id: wind_2
+        method: barbs
+        vector:
+          u: u
+          v: v
+        style: cemc.wind:cn
+        targets: main
+        data_crs: plate_carree
+        vector_basis: earth
+      titles:
+      - id: heading
+        text: K index(shadow) {params.wind_level}hPa Wind(m/s)
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: kidx_0
+      label: K
+  display:
+    template: east_asia

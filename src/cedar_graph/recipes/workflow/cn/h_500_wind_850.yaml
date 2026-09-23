@@ -1,0 +1,86 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.h_500_wind_850
+  title: 500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)
+spec:
+  params: {}
+  data:
+    h_500:
+      field:
+        level:
+          first_level: 500
+          first_level_type: 100
+        parameter: cedarkit.h
+      transforms:
+      - args:
+        - 0.5
+        - 0.25
+        - false
+        kwargs: {}
+        op: smth9
+        repeat: 2
+      units: dagpm
+      source_units: Gpm
+    u_850:
+      field:
+        level:
+          first_level: 850
+          first_level_type: 100
+        parameter: cedarkit.u
+      units: m/s
+      source_units: m/s
+    v_850:
+      field:
+        level:
+          first_level: 850
+          first_level_type: 100
+        parameter: cedarkit.v
+      units: m/s
+      source_units: m/s
+    ws_850:
+      compute:
+        args: []
+        inputs:
+        - u_850
+        - v_850
+        kwargs: {}
+        op: wind_speed
+      source_units: m/s
+      units: m/s
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: ws_850_0
+        method: contourf
+        field: ws_850
+        style: cemc.ws_850:cn
+        targets: all
+        data_crs: plate_carree
+      - id: h_500_1
+        method: contour
+        field: h_500
+        style: cemc.h_500:cn_ws
+        targets: all
+        data_crs: plate_carree
+      - id: wind_2
+        method: barbs
+        vector:
+          u: u_850
+          v: v_850
+        style: cemc.wind:cn
+        targets: main
+        data_crs: plate_carree
+        vector_basis: earth
+      titles:
+      - id: heading
+        text: 500 hPa HGT (10gpm), 850 hPa Wind and Wind Speed(m/s, shadow)
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: ws_850_0
+      label: m/s
+  display:
+    template: east_asia

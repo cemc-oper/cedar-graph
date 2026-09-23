@@ -1,0 +1,45 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.rain_24h
+  title: 'surface cumulated precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
+spec:
+  params:
+    interval:
+      type: enum
+      default: 24h
+      values:
+      - 24h
+  data:
+    rain:
+      field:
+        parameter: cedarkit.rain
+      transforms:
+      - args:
+        - '{params.interval}'
+        kwargs: {}
+        op: time_diff
+        repeat: 1
+      units: mm
+      source_units: mm
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: rain_0
+        method: contourf
+        field: rain
+        style: cemc.rain:cn
+        targets: all
+        data_crs: plate_carree
+      titles:
+      - id: heading
+        text: 'surface cumulated precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: rain_0
+      label: mm
+  display:
+    template: east_asia

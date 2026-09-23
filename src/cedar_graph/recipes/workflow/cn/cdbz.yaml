@@ -1,0 +1,42 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.cdbz
+  title: Radar Composite Reflectivity(dBZ)
+spec:
+  params: {}
+  data:
+    cdbz:
+      field:
+        parameter: cedarkit.cdbz
+      transforms:
+      - args:
+        - 0.5
+        - -0.25
+        - false
+        kwargs: {}
+        op: smth9
+        repeat: 2
+      units: dbz
+      source_units: dBZ
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: cdbz_0
+        method: contourf
+        field: cdbz
+        style: cemc.cdbz:cn
+        targets: all
+        data_crs: plate_carree
+      titles:
+      - id: heading
+        text: Radar Composite Reflectivity(dBZ)
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: cdbz_0
+      label: dBZ
+  display:
+    template: east_asia

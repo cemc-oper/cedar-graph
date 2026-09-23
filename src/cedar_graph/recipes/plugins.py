@@ -12,6 +12,7 @@ import numpy as np
 import xarray as xr
 
 from cedarkit.plots.ops.descriptor import OpDescriptor
+from cedarkit.plots.units import canonical_unit
 
 
 def recipe_provider():
@@ -20,17 +21,27 @@ def recipe_provider():
 
 
 def _wind_speed(u: xr.DataArray, v: xr.DataArray, *, context=None) -> xr.DataArray:
-    return np.sqrt(u * u + v * v)
+    u_unit, v_unit = u.attrs.get("units"), v.attrs.get("units")
+    if u_unit is not None and v_unit is not None and canonical_unit(u_unit) != canonical_unit(v_unit):
+        raise ValueError(f"wind components have different units: {u_unit!r}, {v_unit!r}")
+    result = np.sqrt(u * u + v * v)
+    result.attrs = dict(u.attrs)
+    if u_unit is None and v_unit is not None:
+        result.attrs["units"] = v_unit
+    return result
 
 
 def _prep_classify(rain_total: xr.DataArray, snow_total: xr.DataArray, *, context=None):
     rain_total = xr.where(rain_total > 0, rain_total, np.nan)
     ratio = snow_total / rain_total
-    return (
+    result = (
         xr.where(ratio < 0.25, rain_total, np.nan),
         xr.where(np.logical_and(ratio >= 0.25, ratio <= 0.75), rain_total, np.nan),
         xr.where(ratio > 0.75, rain_total, np.nan),
     )
+    for field in result:
+        field.attrs = dict(rain_total.attrs)
+    return result
 
 
 def op_descriptors():
