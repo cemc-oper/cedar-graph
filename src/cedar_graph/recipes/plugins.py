@@ -16,8 +16,8 @@ from cedarkit.plots.units import canonical_unit
 
 
 def recipe_provider():
-    """Expose packaged v2 recipe resources through Traversable semantics."""
-    return files("cedar_graph.recipes")
+    """Expose only packaged v3 workflow recipes through Traversable semantics."""
+    return files("cedar_graph.recipes").joinpath("workflow")
 
 
 def _wind_speed(u: xr.DataArray, v: xr.DataArray, *, context=None) -> xr.DataArray:

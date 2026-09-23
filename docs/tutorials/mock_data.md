@@ -55,36 +55,26 @@ field
 
 ## 驱动一个图种定义
 
-图种定义（配方或 Python 绘图模块）只与 loader 交互，把
-`MockDataSource` 换成 `LocalDataSource` 只需要改一行。下面这段代码
-与 `tests/mock/plots/cn/` 里的 pytest 用例几乎完全相同。
+合成数据源也实现 v3 workflow 所需的 `fetch`/`fetch_many` 接口。
+下面直接选择产品、编译并运行；产品数值回归见 `tests/mock/test_workflow_recipes.py`。
 
 ```{code-cell} python
-from cedar_graph.recipes.engine import get_recipe_engine
-from cedarkit.plots.engine.loader import get_plot_definition
+from cedar_graph.recipes.workflow_product import select_workflow_product
+from cedarkit.plots.workflow.plan import CompileContext
 
-plot_module = get_plot_definition(
-    plot_type="cn.t2m",
-    base_module_name="cedar_graph.plots",
-    recipe_base_module="cedar_graph.recipes",
-    engine=get_recipe_engine(),
+product = select_workflow_product("cn.t2m")
+context = CompileContext(
+    start_time="2024-07-01", forecast_time="24h",
+    params={"style_variant": "cn_summer"},
 )
+plan = product.compile(context)
+print(plan.summary())
 
-plot_data = plot_module.load_data(
-    data_loader=data_loader,
-    start_time=start_time,
-    forecast_time=forecast_time,
-)
-
-metadata = plot_module.PlotMetadata(
-    start_time=start_time,
-    forecast_time=forecast_time,
-    system_name="CMA-GFS",
-    sample_step=0.5,
-)
-
-panel = plot_module.plot(plot_data=plot_data, plot_metadata=metadata)
-panel.show()
+panel = product.run(MockDataSource(resolution=2), context)
+try:
+    panel.show()
+finally:
+    panel.close()
 ```
 
 ## 字段名速查表

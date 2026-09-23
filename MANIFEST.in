@@ -1,2 +1,1 @@
-recursive-include src/cedar_graph/styles *.yml *.yaml
-recursive-include src/cedar_graph/recipes *.yml *.yaml
+recursive-include src/cedar_graph/recipes/workflow *.yaml

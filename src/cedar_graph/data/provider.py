@@ -9,8 +9,7 @@ import xarray as xr
 import pandas as pd
 import reki
 
-from cedarkit.plots.plan.nodes import RequestKey, TimeBinding
-from cedarkit.plots.plan.provider import BoundFieldRequest
+from cedarkit.plots.workflow.plan.model import BoundFieldRequest, FieldRequest
 
 
 @dataclass(frozen=True)
@@ -89,9 +88,7 @@ class RekiProvider:
 
     @staticmethod
     def _request_times(key):
-        """Read both the transitional PlotPlan and v3 WorkflowPlan keys."""
-        if hasattr(key, "time_binding"):
-            return key.time_binding.start_time, key.time_binding.forecast_time
+        """Decode v3 request times for the reki source."""
         start = pd.Timestamp(key.start_time) if key.start_time is not None else None
         if key.forecast_time is None:
             forecast = None
@@ -134,10 +131,11 @@ class RekiProvider:
                 raise ValueError("a stable parameter_id is required for a direct-result source")
             request = BoundFieldRequest(
                 node_id="legacy-load",
-                key=RequestKey(
+                key=FieldRequest(
                     provider_slot="default", parameter_id=parameter_id,
                     query=query,
-                    time_binding=TimeBinding(start_time, forecast_time),
+                    start_time=None if start_time is None else str(start_time),
+                    forecast_time=None if forecast_time is None else str(forecast_time),
                     cardinality="one" if required else "first",
                 ),
                 origin="legacy FieldInfo adapter",
@@ -166,8 +164,7 @@ class RekiProvider:
         fields = reader.fetch_many(queries, cardinality=mode)
         return [None if field is None else field.to_xarray() for field in fields]
 
-    # PlotPlan provider contract -------------------------------------------------
-    # The source binding remains here, rather than in recipes or plans.
+    # WorkflowPlan provider contract --------------------------------------------
     def fetch(self, request: BoundFieldRequest):
         """Fetch one compiled request using its concrete time binding."""
         self._ensure_open()
@@ -219,7 +216,7 @@ class RekiProvider:
                 query=request.key.query,
                 start_time=start_time,
                 forecast_time=forecast_time,
-                member=getattr(getattr(request.key, "time_binding", None), "member", request.key.query.member),
+                member=request.key.query.member,
                 region=self.region,
             )
             result = reki.from_source(self.source_spec, **bound.dynamic_source_kwargs()).to_xarray()

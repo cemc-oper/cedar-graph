@@ -46,15 +46,14 @@ def test_provider_close_releases_cache_and_rejects_new_reads(monkeypatch):
 
 
 def test_fetch_many_reuses_cached_field_and_traces_each_consumer(monkeypatch):
-    from cedarkit.plots.plan.nodes import RequestKey, TimeBinding
-    from cedarkit.plots.plan.provider import BoundFieldRequest
+    from cedarkit.plots.workflow.plan.model import FieldRequest, BoundFieldRequest
 
     calls = []
     monkeypatch.setattr(reki, "from_source", lambda *args, **kwargs: calls.append(1) or _Reader())
     provider = RekiProvider(reki.SourceSpec("local", args=("fixture",)))
-    key = RequestKey(provider_slot="default", parameter_id="cedarkit.t2m",
-                     query=reki.FieldQuery(parameter="t2m"),
-                     time_binding=TimeBinding("2026-07-16", "24h"))
+    key = FieldRequest(provider_slot="default", parameter_id="cedarkit.t2m",
+                       query=reki.FieldQuery(parameter="t2m"),
+                       start_time="2026-07-16", forecast_time="24h", cardinality="one")
     first = BoundFieldRequest(node_id="first", key=key, origin="test")
     second = BoundFieldRequest(node_id="second", key=key, origin="test")
     values = provider.fetch_many((first, second))

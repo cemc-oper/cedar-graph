@@ -5,17 +5,10 @@ mystnb:
 
 # 快速绘图
 
-{func}`cedar_graph.quickplot.quick_plot` 是在 CMA-HPC 上
-最快速的画图方式。指定图种、业务系统名以及预报时间，
-它内部会通过 {class}`~cedar_graph.data.LocalDataSource`
-完成数据查找与读取。
-
-`plot_type` 直接映射图种定义：**先查 YAML 配方**
-（`cedar_graph/recipes/`，如 `cn.t2m` 对应
-`recipes/cn/t2m.yaml`），**再查 Python 绘图模块**
-（`cedar_graph/plots/`，如 `cn.shr.default`），两者接口一致、
-对调用方透明。完整图种清单见 {doc}`../api/recipes` 与
-{doc}`../api/plots`。
+{func}`cedar_graph.quickplot.quick_plot` 按产品 ID 选择 v3 workflow，
+用 reki 目录解析数据源并运行编译、数据处理和渲染。内置配方位于
+`cedar_graph/recipes/workflow/cn/`；`cn.shr.default` 等五个原 Python
+产品也使用同一条 workflow。产品清单见 {doc}`../api/recipes`。
 
 ## 默认范围下的 2 m 温度
 
@@ -30,8 +23,7 @@ quick_plot(
 )
 ```
 
-`start_time` 既支持 `pd.Timestamp` 对象，也支持 GRIB 中常用的
-紧凑形式 `"YYYYMMDDHH"` / `"YYYYMMDDHHMM"`。
+`start_time` 支持 `pd.Timestamp` 对象或 pandas 可解析的时间字符串。
 `forecast_time` 支持 `pd.Timedelta` 对象或 `"24h"` 这样的字符串。
 
 ## 自定义区域的 10 m 风场
@@ -78,7 +70,5 @@ quick_plot(
 
 ## 不在 CMA-HPC 时
 
-`quick_plot` 默认假设了 CMA-HPC 上的目录结构与配置。在
-CMA-HPC 之外的环境，请改用 {doc}`manual_plot` 中介绍的方式直接
-驱动 `load_data` 与 `plot`，并按需挑选数据源——例如本文档使用的
-{class}`cedar_graph.testing.MockDataSource`。
+在 CMA-HPC 之外，可按 {doc}`manual_plot` 使用
+{class}`cedar_graph.testing.MockDataSource` 执行相同的产品。

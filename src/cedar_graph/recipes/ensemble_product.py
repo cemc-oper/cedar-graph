@@ -137,7 +137,7 @@ class EnsembleT2MProduct:
                         request: EnsembleRequest):
         """Compile the same member reads used by prepare, without opening data."""
         discovered = discover_workflow()
-        recipe = discovered.recipes.load("workflow.cn.ens_t2m_member")
+        recipe = discovered.recipes.load("cn.ens_t2m_member")
         variant = request.style_variant or ("cn_summer" if 5 <= pd.Timestamp(start_time).month <= 9 else "cn_winter")
         ids = ((request.control_id,) if request.control_id else ()) + request.member_ids
         return {member_id: compile_recipe(recipe, CompileContext(

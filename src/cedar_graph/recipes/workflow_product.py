@@ -11,11 +11,11 @@ from cedarkit.plots.workflow.recipe import LoadedRecipe, load_recipe
 from cedarkit.plots.workflow.render import render_result
 
 
-_MIGRATED = {f"cn.{name}": f"workflow.cn.{name}" for name in (
+_MIGRATED = {f"cn.{name}": f"cn.{name}" for name in (
     "bli_wind", "cape_wind", "cdbz", "cin_wind", "h_500_psl", "h_500_wind_850",
     "kidx_wind", "prep_24h", "rain_24h", "rain_wind_10m", "rh2m", "t2m", "wind_10m",
 )}
-_MIGRATED.update({f"cn.{name}.default": f"workflow.cn.{name}" for name in (
+_MIGRATED.update({f"cn.{name}.default": f"cn.{name}" for name in (
     "div_wind", "pte_wind", "qv_div", "shr", "t_dew_t",
 )})
 

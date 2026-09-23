@@ -1,8 +1,7 @@
 """CEMC plot recipes (YAML).
 
-Recipes under ``cn/`` are loaded by the quick_plot loader before Python
-plot modules (``cedar_graph.plots``); both expose the same interface.
-See ``cedar_graph.recipes.engine`` for the configured ``PlotEngine``
+Recipes under ``workflow/cn/`` are discovered as v3 workflow products.
+The public product IDs remain ``cn.*``.
 (field registry + diagnostic ops) used to execute them.
 """
 
