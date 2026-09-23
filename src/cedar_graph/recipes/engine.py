@@ -13,13 +13,11 @@ Wires the business pieces into the business-agnostic engine:
 from types import MappingProxyType
 from typing import Optional
 
-import numpy as np
-import xarray as xr
-
 from cedarkit.plots.engine import OpRegistry, PlotEngine
 from cedarkit.plots.style import get_default_registry
 
 from cedar_graph.data.field_info import field_info_from_parameter
+from cedar_graph.recipes.plugins import _prep_classify, _wind_speed
 
 
 # Frozen T2-01 migration matrix, retained only for old Python imports.
@@ -48,25 +46,6 @@ RECIPE_FIELDS = MappingProxyType(dict(FIELD_INFOS) | {
     )
     for legacy_name, parameter_id in _LEGACY_FIELD_IDS.items()
 } | dict(OVERRIDE_FIELDS))
-
-
-def _wind_speed(u: xr.DataArray, v: xr.DataArray, context) -> xr.DataArray:
-    """Wind speed from u/v components (sqrt(u^2 + v^2))."""
-    return np.sqrt(u * u + v * v)
-
-
-def _prep_classify(rain_total: xr.DataArray, snow_total: xr.DataArray, context):
-    """
-    Split total precipitation into rain / rain-snow mix / snow by the
-    snow-to-rain ratio (< 0.25 rain, > 0.75 snow, in between mix);
-    non-positive totals are masked out.
-    """
-    rain_total = xr.where(rain_total > 0, rain_total, np.nan)
-    ratio = snow_total / rain_total
-    field_rain = xr.where(ratio < 0.25, rain_total, np.nan)
-    field_rain_snow = xr.where(np.logical_and(ratio >= 0.25, ratio <= 0.75), rain_total, np.nan)
-    field_snow = xr.where(ratio > 0.75, rain_total, np.nan)
-    return field_rain, field_rain_snow, field_snow
 
 
 def create_op_registry() -> OpRegistry:

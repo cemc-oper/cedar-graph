@@ -11,7 +11,6 @@ from importlib.resources import files
 import numpy as np
 import xarray as xr
 
-from cedarkit.plots.domains.registry import DomainDescriptor
 from cedarkit.plots.ops.descriptor import OpDescriptor
 
 
@@ -38,14 +37,4 @@ def op_descriptors():
     return (
         OpDescriptor("wind_speed", "compute", 2, 1, _wind_speed, pure=True, reusable=True),
         OpDescriptor("prep_classify", "compute", 2, 3, _prep_classify, pure=True, reusable=True),
-    )
-
-
-def domain_descriptors():
-    # Imports are intentionally deferred: plugin discovery itself remains
-    # lightweight and does not pull plotting backends into the core package.
-    from cedarkit.plots.domains import CnAreaMapTemplate, EastAsiaMapTemplate
-    return (
-        DomainDescriptor("east_asia", lambda metadata: EastAsiaMapTemplate()),
-        DomainDescriptor("cn_area", lambda metadata: CnAreaMapTemplate(area=metadata.area_range)),
     )
