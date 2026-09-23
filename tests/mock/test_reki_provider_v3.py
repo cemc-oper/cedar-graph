@@ -81,3 +81,35 @@ def test_cmadaas_provider_binds_v3_request_and_region_without_select(monkeypatch
         assert provider.trace[0].external_parameter == "TEM"
     finally:
         provider.close()
+
+
+def test_mounted_ensemble_member_binds_file_number_and_grib_member(monkeypatch):
+    field = xr.DataArray([[273.15]], dims=("latitude", "longitude"),
+                         coords={"latitude": [30.0], "longitude": [110.0]}, attrs={"units": "K"})
+    calls = []
+
+    class Reader:
+        def sel(self, query):
+            calls.append(("query", query))
+            return self
+
+        def one(self):
+            return self
+
+        def to_xarray(self):
+            return field
+
+    monkeypatch.setattr(reki, "from_source", lambda spec, **kwargs: calls.append(("source", kwargs)) or Reader())
+    provider = RekiProvider(reki.SourceSpec("local", args=("cma_geps/grib2/orig",)))
+    try:
+        from dataclasses import replace
+        request = _request()
+        query = replace(request.key.query, member="m003")
+        request = replace(request, key=replace(request.key, query=query))
+        result = provider.fetch(request)
+        assert result.identical(field)
+        assert calls[0][1]["number"] == 3
+        assert calls[1][1].member == 3
+        assert request.key.query.member == "m003"
+    finally:
+        provider.close()

@@ -66,6 +66,7 @@ spec:
         data_crs: plate_carree
       - id: wind_2
         method: barbs
+        max_vectors: 900
         vector:
           u: u_850
           v: v_850

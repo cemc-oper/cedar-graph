@@ -65,7 +65,7 @@ def test_divergence_scaling_smoothing_and_pressure_levels():
     expected = smth9(smth9(raw.values, 0.5, -0.25, False), 0.5, -0.25, False) * 1e5
     np.testing.assert_allclose(result.outputs["div"].values, expected)
     assert result.outputs["div"].attrs["units"] == "10^-5 s^-1"
-    requests = {request.key.parameter_id: request.key.query.extra["first_level"]
+    requests = {request.key.parameter_id: request.key.query.level
                 for request in source.workflow_requests}
     assert requests == {"cedarkit.div": 700.0, "cedarkit.u": 850.0, "cedarkit.v": 850.0}
 
@@ -79,7 +79,7 @@ def test_pte_two_levels_and_temperature_difference():
         source, "cedarkit.theta-se", "pte", 850)
     np.testing.assert_allclose(result.outputs["pte_diff"].values, expected.values)
     assert result.outputs["pte_diff"].attrs == {"units": "K", "temperature_kind": "difference"}
-    levels = {request.key.query.extra["first_level"] for request in source.workflow_requests
+    levels = {request.key.query.level for request in source.workflow_requests
               if request.key.parameter_id == "cedarkit.theta-se"}
     assert levels == {500.0, 850.0}
 
@@ -103,8 +103,8 @@ def test_qdiv_shearing_and_dewpoint_units():
         shear_expected = smth9(shear_expected, 0.5, -0.25, False)
     np.testing.assert_allclose(shear_result.outputs["shr"].values, shear_expected)
     assert shear_result.outputs["shr"].attrs["units"] == "m/s"
-    assert shear_source.workflow_requests[0].key.query.extra["first_level"] == 3000
-    assert shear_source.workflow_requests[0].key.query.extra["second_level"] == 0
+    assert shear_source.workflow_requests[0].key.query.level == 3000
+    assert shear_source.workflow_requests[0].key.query.extra["scaledValueOfSecondFixedSurface"] == 0
 
     dew = select_workflow_product("cn.t_dew_t.default")
     dew_source = MockDataSource(resolution=2)

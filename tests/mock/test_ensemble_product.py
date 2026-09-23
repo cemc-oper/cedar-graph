@@ -102,6 +102,35 @@ def test_control_is_optional_and_max_can_include_it_explicitly():
         panel.close()
 
 
+def test_grib_member_number_is_preserved_on_members_and_ignored_for_max_grid():
+    class NumberedSource(MockDataSource):
+        def fetch_many(self, requests):
+            fields = super().fetch_many(requests)
+            numbered = []
+            for request, field in zip(requests, fields):
+                field = field.assign_coords(number=int(request.key.query.member[1:]))
+                field.attrs.pop("standard_name", None)
+                numbered.append(field)
+            return numbered
+
+    request = EnsembleRequest(("m001", "m002"), control_id="m000",
+                              include_control_in_max=True)
+    prepared, _ = _prepare(request, NumberedSource(resolution=5))
+    assert [prepared.fields[member].coords["number"].item()
+            for member in ("m000", "m001", "m002")] == [0, 1, 2]
+    assert "number" not in prepared.max_field.coords
+    assert all(field.attrs["standard_name"] == "air_temperature"
+               for field in (*prepared.fields.values(), prepared.max_field))
+    np.testing.assert_allclose(prepared.max_field.values,
+                               np.maximum.reduce([prepared.fields[member].values
+                                                  for member in prepared.max_input_ids]))
+    panel = prepared.render(basemap=_basemap())
+    try:
+        assert "ens_cn_colorbar" in panel.effective_config.decorations.colorbars
+    finally:
+        panel.close()
+
+
 def test_missing_members_are_recorded_or_rejected_by_policy():
     class MissingSource(MockDataSource):
         def fetch_many(self, requests):

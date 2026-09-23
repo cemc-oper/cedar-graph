@@ -165,7 +165,9 @@ class EnsembleT2MProduct:
                     reads += plan.read_count
                     continue
                 raise
-            fields[member_id] = result.outputs["temperature"]
+            field = result.outputs["temperature"].copy(deep=False)
+            field.attrs = {**field.attrs, "standard_name": "air_temperature"}
+            fields[member_id] = field
             reads += plan.read_count
             if member_id != request.control_id:
                 realized.append(member_id)
@@ -177,7 +179,11 @@ class EnsembleT2MProduct:
         max_inputs = tuple(realized) + ((control,) if request.include_control_in_max else ())
         maximum = None
         if request.max_enabled:
-            inputs = [fields[member_id] for member_id in max_inputs]
+            # GRIB carries the member number as a scalar coordinate.  It is
+            # identity metadata, not part of the spatial grid for MAX.
+            inputs = [field.reset_coords("number", drop=True)
+                      if "number" in field.coords and field.coords["number"].ndim == 0 else field
+                      for field in (fields[member_id] for member_id in max_inputs)]
             first = inputs[0]
             if any(field.dims != first.dims or not field.coords.equals(first.coords) or
                    field.attrs.get("units") != first.attrs.get("units") for field in inputs[1:]):

@@ -1,7 +1,8 @@
 """Thin bridge binding cedar-graph field requirements to reki sources."""
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
+import re
 from time import perf_counter
 from typing import Any, Mapping
 
@@ -86,6 +87,19 @@ class RekiProvider:
             "start_time": start_time, "forecast_time": forecast_time,
         }.items() if value is not None}
 
+    def _selectable_binding(self, query, *, start_time=None, forecast_time=None):
+        """Bind a mounted ensemble member to both its file and GRIB field."""
+        bindings = self._bindings(start_time=start_time, forecast_time=forecast_time)
+        if self.source_spec.name != "local" or query.member is None:
+            return bindings, query
+        member = query.member
+        if isinstance(member, bool) or not (isinstance(member, int) and member >= 0
+                                             or isinstance(member, str) and re.fullmatch(r"m?\d+", member)):
+            raise ValueError(f"local ensemble member must be a non-negative number or mNNN ID: {member!r}")
+        number = int(member.lstrip("m")) if isinstance(member, str) else member
+        bindings["number"] = number
+        return bindings, replace(query, member=number)
+
     @staticmethod
     def _request_times(key):
         """Decode v3 request times for the reki source."""
@@ -143,9 +157,10 @@ class RekiProvider:
             value = self._fetch_direct(request)
             self._field_cache[cache_key] = value
             return value.copy(deep=False)
-        bindings = self._bindings(start_time=start_time, forecast_time=forecast_time)
+        bindings, selected_query = self._selectable_binding(
+            query, start_time=start_time, forecast_time=forecast_time)
         reader = reki.from_source(self.source_spec, **bindings)
-        selected = reader.sel(query)
+        selected = reader.sel(selected_query)
         field = selected.one() if required else selected.one_or_none()
         value = None if field is None else field.to_xarray()
         self._field_cache[cache_key] = value
@@ -249,10 +264,11 @@ class RekiProvider:
         result = []
         for request in requests:
             start_time, forecast_time = self._request_times(request.key)
-            kwargs = self._bindings(start_time=start_time, forecast_time=forecast_time)
+            kwargs, selected_query = self._selectable_binding(
+                request.key.query, start_time=start_time, forecast_time=forecast_time)
             try:
                 reader = reki.from_source(self.source_spec, **kwargs)
-                selected = reader.sel(request.key.query)
+                selected = reader.sel(selected_query)
                 # ``one_or_none`` is the strict metadata/cardinality boundary;
                 # it does not call ``to_xarray`` or decode values.
                 result.append("available" if selected.one_or_none() is not None else "missing")
