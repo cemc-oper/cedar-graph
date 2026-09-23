@@ -1,0 +1,95 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.t_dew_t.default
+  title: '{params.area_name} {params.level}hPa Temperature (°C) and Dewpoint Depression
+    (K)'
+spec:
+  params:
+    level:
+      type: float
+      required: true
+    area_name:
+      type: str
+      default: ''
+  data:
+    temperature:
+      field:
+        parameter: cedarkit.t
+        level:
+          first_level_type: 100
+          first_level: '{params.level}'
+      transforms:
+      - &id001
+        op: smth9
+        args:
+        - 0.5
+        - 0.25
+        - true
+        repeat: 2
+      source_units: K
+      units: degC
+      temperature_kind: absolute
+    temperature_raw:
+      field:
+        parameter: cedarkit.t
+        level:
+          first_level_type: 100
+          first_level: '{params.level}'
+      source_units: K
+      units: K
+      temperature_kind: absolute
+    dewpoint:
+      field:
+        parameter: cedarkit.td
+        level:
+          first_level_type: 100
+          first_level: '{params.level}'
+      source_units: K
+      units: K
+      temperature_kind: absolute
+    depression:
+      compute:
+        op: temperature_difference
+        inputs:
+        - temperature_raw
+        - dewpoint
+      transforms:
+      - *id001
+      source_units: K
+      units: K
+      temperature_kind: difference
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: depression_plot
+        method: contourf
+        field: depression
+        style: cemc.t_dew_t:cn_fill
+        targets: all
+        data_crs: plate_carree
+      - id: depression_line
+        method: contour
+        field: depression
+        style: cemc.t_dew_t:cn_line
+        targets: all
+        data_crs: plate_carree
+      - id: temperature_plot
+        method: contour
+        field: temperature
+        style: cemc.t_dew_t:cn_t
+        targets: all
+        data_crs: plate_carree
+      titles:
+      - id: heading
+        text: '{params.area_name} {params.level}hPa Temperature (°C) and Dewpoint
+          Depression (K)'
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: depression_plot
+      label: K
+  display:
+    template: east_asia

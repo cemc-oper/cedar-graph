@@ -1,0 +1,101 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.pte_wind.default
+  title: '{params.area_name} PTE {params.pte_first_level}-{params.pte_second_level}hPa
+    difference (K) and {params.wind_level}hPa Wind (m/s)'
+spec:
+  params:
+    wind_level:
+      type: float
+      required: true
+    pte_first_level:
+      type: float
+      default: 500
+    pte_second_level:
+      type: float
+      default: 850
+    area_name:
+      type: str
+      default: ''
+  data:
+    pte_first:
+      field:
+        parameter: cedarkit.theta-se
+        level:
+          first_level_type: 100
+          first_level: '{params.pte_first_level}'
+      source_units: K
+      units: K
+      temperature_kind: absolute
+    pte_second:
+      field:
+        parameter: cedarkit.theta-se
+        level:
+          first_level_type: 100
+          first_level: '{params.pte_second_level}'
+      source_units: K
+      units: K
+      temperature_kind: absolute
+    pte_diff:
+      compute:
+        op: temperature_difference
+        inputs:
+        - pte_first
+        - pte_second
+      source_units: K
+      units: K
+      temperature_kind: difference
+    u:
+      field:
+        parameter: cedarkit.u
+        level:
+          first_level_type: 100
+          first_level: '{params.wind_level}'
+      source_units: m/s
+      units: m/s
+    v:
+      field:
+        parameter: cedarkit.v
+        level:
+          first_level_type: 100
+          first_level: '{params.wind_level}'
+      source_units: m/s
+      units: m/s
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: pte_diff_plot
+        method: contourf
+        field: pte_diff
+        style: cemc.pte_diff:cn_fill
+        targets: all
+        data_crs: plate_carree
+      - id: pte_diff_line
+        method: contour
+        field: pte_diff
+        style: cemc.pte_diff:cn_line
+        targets: all
+        data_crs: plate_carree
+      - id: wind
+        method: barbs
+        vector:
+          u: u
+          v: v
+        style: cemc.wind:cn
+        targets: main
+        data_crs: plate_carree
+        vector_basis: earth
+      titles:
+      - id: heading
+        text: '{params.area_name} PTE {params.pte_first_level}-{params.pte_second_level}hPa
+          difference (K) and {params.wind_level}hPa Wind (m/s)'
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: pte_diff_plot
+      label: K
+  display:
+    template: east_asia

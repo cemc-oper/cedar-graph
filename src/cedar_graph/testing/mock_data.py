@@ -72,18 +72,27 @@ class MockDataSource(DataSource):
             self.workflow_requests.append(request)
             key = request.key
             supported = {"bli", "cape", "cdbz", "cin", "h", "psl", "kidx", "rain", "sf",
-                         "rh2m", "u", "v", "t2m"}
-            if key.parameter_id.removeprefix("cedarkit.") not in supported:
+                         "rh2m", "u", "v", "t2m", "div", "qdiv", "theta-se", "shr", "t", "td"}
+            parameter_name = key.parameter_id.removeprefix("cedarkit.")
+            if parameter_name not in supported and not parameter_name.startswith("shr-0-"):
                 raise ValueError(f"unsupported mock workflow parameter {key.parameter_id!r}")
             info = field_info_from_parameter(key.parameter_id)
             info.name = {"psl": "mslp", "cdbz": "cr", "kidx": "k", "rain": "apcp",
-                         "sf": "asnow", "cin": "cape"}.get(info.name, info.name)
-            info.level_type = key.query.level_type
-            info.level = key.query.level
+                         "sf": "asnow", "cin": "cape", "qdiv": "qv_div",
+                         "thetaSe": "pte", "shr": "vwsh", "td": "dpt"}.get(info.name, info.name)
+            if parameter_name.startswith("shr-0-"):
+                info.name = "vwsh"
+            info.level_type = key.query.level_type or key.query.extra.get("first_level_type")
+            info.level = key.query.level or key.query.extra.get("first_level")
             field = self.retrieve(
                 info,
                 start_time=pd.Timestamp(key.start_time), forecast_time=pd.Timedelta(key.forecast_time))
-            field.attrs = {**field.attrs, "units": resolve_parameter(key.parameter_id).record.unit}
+            units = resolve_parameter(key.parameter_id).record.unit
+            if parameter_name == "qdiv":
+                units = "g/(hPa cm^2 s)"
+            elif parameter_name == "shr" or parameter_name.startswith("shr-0-"):
+                units = "m/s"
+            field.attrs = {**field.attrs, "units": units}
             if key.parameter_id == "cedarkit.t2m":
                 field.attrs["standard_name"] = "air_temperature"
             result.append(field)

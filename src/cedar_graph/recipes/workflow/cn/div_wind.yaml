@@ -1,0 +1,86 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.div_wind.default
+  title: '{params.area_name} {params.div_level}hPa Divergence (10^-5 s^-1) and Wind
+    (m/s)'
+spec:
+  params:
+    div_level:
+      type: float
+      required: true
+    wind_level:
+      type: float
+      required: true
+    area_name:
+      type: str
+      default: ''
+  data:
+    div:
+      field:
+        parameter: cedarkit.div
+        level:
+          first_level_type: 100
+          first_level: '{params.div_level}'
+      transforms:
+      - op: smth9
+        args:
+        - 0.5
+        - -0.25
+        - false
+        repeat: 2
+      source_units: s^-1
+      units: 10^-5 s^-1
+    u:
+      field:
+        parameter: cedarkit.u
+        level:
+          first_level_type: 100
+          first_level: '{params.wind_level}'
+      source_units: m/s
+      units: m/s
+    v:
+      field:
+        parameter: cedarkit.v
+        level:
+          first_level_type: 100
+          first_level: '{params.wind_level}'
+      source_units: m/s
+      units: m/s
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: div_plot
+        method: contourf
+        field: div
+        style: cemc.div:cn_fill
+        targets: all
+        data_crs: plate_carree
+      - id: div_line
+        method: contour
+        field: div
+        style: cemc.div:cn_line
+        targets: all
+        data_crs: plate_carree
+      - id: wind
+        method: barbs
+        vector:
+          u: u
+          v: v
+        style: cemc.wind:cn
+        targets: main
+        data_crs: plate_carree
+        vector_basis: earth
+      titles:
+      - id: heading
+        text: '{params.area_name} {params.div_level}hPa Divergence (10^-5 s^-1) and
+          Wind (m/s)'
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: div_plot
+      label: 10^-5 s^-1
+  display:
+    template: east_asia

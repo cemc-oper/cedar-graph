@@ -44,8 +44,21 @@ def _prep_classify(rain_total: xr.DataArray, snow_total: xr.DataArray, *, contex
     return result
 
 
+def _temperature_difference(first: xr.DataArray, second: xr.DataArray, *, context=None) -> xr.DataArray:
+    """Subtract two absolute Kelvin fields and label the result as a difference."""
+    if canonical_unit(first.attrs.get("units", "")) != "K" or canonical_unit(second.attrs.get("units", "")) != "K":
+        raise ValueError("temperature_difference requires two Kelvin fields")
+    if first.attrs.get("temperature_kind") != "absolute" or second.attrs.get("temperature_kind") != "absolute":
+        raise ValueError("temperature_difference requires absolute temperatures")
+    result = first - second
+    result.attrs = {"units": "K", "temperature_kind": "difference"}
+    return result
+
+
 def op_descriptors():
     return (
         OpDescriptor("wind_speed", "compute", 2, 1, _wind_speed, pure=True, reusable=True),
         OpDescriptor("prep_classify", "compute", 2, 3, _prep_classify, pure=True, reusable=True),
+        OpDescriptor("temperature_difference", "compute", 2, 1, _temperature_difference,
+                     pure=True, reusable=True),
     )

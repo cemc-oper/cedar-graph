@@ -1,0 +1,58 @@
+api_version: cedarkit.plots/v3
+kind: PlotRecipe
+metadata:
+  name: cn.qv_div.default
+  title: '{params.area_name} {params.level}hPa Moisture Divergence (10^-7 g/(hPa cm^2
+    s))'
+spec:
+  params:
+    level:
+      type: float
+      required: true
+    area_name:
+      type: str
+      default: ''
+  data:
+    qdiv:
+      field:
+        parameter: cedarkit.qdiv
+        level:
+          first_level_type: 100
+          first_level: '{params.level}'
+      transforms:
+      - op: smth9
+        args:
+        - 0.5
+        - -0.25
+        - false
+        repeat: 2
+      source_units: g/(hPa cm^2 s)
+      units: 10^-7 g/(hPa cm^2 s)
+  content:
+    charts:
+    - id: main
+      plots:
+      - id: qdiv_plot
+        method: contourf
+        field: qdiv
+        style: cemc.qdiv:cn_fill
+        targets: all
+        data_crs: plate_carree
+      - id: qdiv_line
+        method: contour
+        field: qdiv
+        style: cemc.qdiv:cn_line
+        targets: all
+        data_crs: plate_carree
+      titles:
+      - id: heading
+        text: '{params.area_name} {params.level}hPa Moisture Divergence (10^-7 g/(hPa
+          cm^2 s))'
+    colorbars:
+    - id: fields
+      plots:
+      - chart: main
+        plot: qdiv_plot
+      label: 10^-7 g/(hPa cm^2 s)
+  display:
+    template: east_asia
