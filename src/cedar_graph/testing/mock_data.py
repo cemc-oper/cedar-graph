@@ -34,7 +34,7 @@ import pandas as pd
 import xarray as xr
 
 from cedar_graph.data import DataLoader
-from cedar_graph.data.field_info import FieldInfo
+from cedar_graph.data.field_info import FieldInfo, field_info_from_parameter
 from cedar_graph.data.source import DataSource
 
 
@@ -61,6 +61,25 @@ class MockDataSource(DataSource):
         self.lon = np.arange(60, 150 + resolution, resolution)
         self.lat = np.arange(70, 0 - resolution, -resolution)
         self._lon2d, self._lat2d = np.meshgrid(self.lon, self.lat)
+        self.workflow_requests = []
+
+    def fetch_many(self, requests):
+        """Serve v3 workflow requests with the same deterministic fields."""
+        from reki import resolve_parameter
+
+        result = []
+        for request in requests:
+            self.workflow_requests.append(request)
+            key = request.key
+            if key.parameter_id != "cedarkit.t2m":
+                raise ValueError(f"unsupported mock workflow parameter {key.parameter_id!r}")
+            field = self.retrieve(
+                field_info_from_parameter(key.parameter_id, name="t2m"),
+                start_time=pd.Timestamp(key.start_time), forecast_time=pd.Timedelta(key.forecast_time))
+            field.attrs = {**field.attrs, "units": resolve_parameter(key.parameter_id).record.unit,
+                           "standard_name": "air_temperature"}
+            result.append(field)
+        return result
 
     def retrieve(
             self,

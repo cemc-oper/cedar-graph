@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 import matplotlib
+import cartopy.crs  # Load PROJ before the data provider imports ecCodes.
 import pytest
 from loguru import logger
 

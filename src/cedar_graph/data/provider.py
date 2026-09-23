@@ -6,6 +6,7 @@ from time import perf_counter
 from typing import Any, Mapping
 
 import xarray as xr
+import pandas as pd
 import reki
 
 from cedarkit.plots.plan.nodes import RequestKey, TimeBinding
@@ -75,17 +76,33 @@ class RekiProvider:
             "start_time": start_time, "forecast_time": forecast_time,
         }.items() if value is not None}
 
+    @staticmethod
+    def _request_times(key):
+        """Read both the transitional PlotPlan and v3 WorkflowPlan keys."""
+        if hasattr(key, "time_binding"):
+            return key.time_binding.start_time, key.time_binding.forecast_time
+        start = pd.Timestamp(key.start_time) if key.start_time is not None else None
+        if key.forecast_time is None:
+            forecast = None
+        else:
+            try:
+                forecast = pd.Timedelta(key.forecast_time)
+            except (TypeError, ValueError):
+                forecast = pd.Timestamp(key.forecast_time)
+        return start, forecast
+
     def _append_trace(self, request: BoundFieldRequest, *, status: str,
                       duration: float, external_parameter: str | None = None,
                       error_code: str | None = None) -> None:
         key = request.key
-        binding = key.time_binding
+        start_time, forecast_time = self._request_times(key)
         self.trace.append(ProviderTrace(
             node_id=request.node_id, dataset_id=self.dataset_id,
             catalog_origin=self.catalog_origin, provider=self.source_spec.name,
             parameter_id=key.parameter_id, external_parameter=external_parameter,
             level_type=key.query.level_type, level=key.query.level,
-            start_time=binding.start_time, forecast_time=binding.forecast_time,
+            start_time=None if start_time is None else str(start_time),
+            forecast_time=None if forecast_time is None else str(forecast_time),
             status=status, duration_seconds=duration, error_code=error_code,
         ))
 
@@ -148,11 +165,12 @@ class RekiProvider:
 
     def _fetch_selectable(self, request: BoundFieldRequest):
         started = perf_counter()
+        start_time, forecast_time = self._request_times(request.key)
         try:
             value = self.load(
                 request.key.query,
-                start_time=request.key.time_binding.start_time,
-                forecast_time=request.key.time_binding.forecast_time,
+                start_time=start_time,
+                forecast_time=forecast_time,
                 required=request.key.cardinality != "all",
                 parameter_id=request.key.parameter_id,
             )
@@ -167,13 +185,14 @@ class RekiProvider:
     def _fetch_direct(self, request: BoundFieldRequest):
         """Bind a high-level request before source construction; never select it."""
         started = perf_counter()
+        start_time, forecast_time = self._request_times(request.key)
         try:
             bound = reki.bind_cmadaas_request(
                 self.source_spec, parameter_id=request.key.parameter_id,
                 query=request.key.query,
-                start_time=request.key.time_binding.start_time,
-                forecast_time=request.key.time_binding.forecast_time,
-                member=request.key.time_binding.member,
+                start_time=start_time,
+                forecast_time=forecast_time,
+                member=getattr(getattr(request.key, "time_binding", None), "member", request.key.query.member),
                 region=self.region,
             )
             result = reki.from_source(self.source_spec, **bound.dynamic_source_kwargs()).to_xarray()
@@ -198,6 +217,8 @@ class RekiProvider:
         if not requests:
             return []
         first = requests[0]
+        if not hasattr(first.key, "time_binding"):
+            return [self.fetch(request) for request in requests]
         capability = self._capability()
         if capability is not None and capability.direct_result:
             # MUSIC has no equivalent grid batch API.  Keep input order and
@@ -221,8 +242,8 @@ class RekiProvider:
             return ["unknown" for _ in requests]
         result = []
         for request in requests:
-            binding = request.key.time_binding
-            kwargs = self._bindings(start_time=binding.start_time, forecast_time=binding.forecast_time)
+            start_time, forecast_time = self._request_times(request.key)
+            kwargs = self._bindings(start_time=start_time, forecast_time=forecast_time)
             try:
                 reader = reki.from_source(self.source_spec, **kwargs)
                 selected = reader.sel(request.key.query)
