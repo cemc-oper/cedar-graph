@@ -2,8 +2,9 @@ import inspect
 from typing import Any, Callable, Optional
 
 import pandas as pd
+import reki
 
-from cedar_graph.data import LocalDataSource, DataSource, DataLoader
+from cedar_graph.data import LocalDataSource, DataSource, DataLoader, RekiProvider
 from cedarkit.plots.engine.loader import (
     Metadata,
     convert_metadata,
@@ -88,6 +89,45 @@ def quick_plot(
 
 
 def show_plot(plot_type: str, plot_settings: dict, data_source_config: dict):
+    from cedar_graph.recipes.ensemble_product import EnsembleRequest, EnsembleT2MProduct, select_ensemble_product
+    from cedar_graph.recipes.workflow_product import select_workflow_product
+    from cedar_graph.metadata import ProductMetadata
+
+    product = select_ensemble_product(plot_type) or select_workflow_product(plot_type)
+    if product is not None:
+        metadata = ProductMetadata.from_settings(plot_settings)
+        source_config = dict(data_source_config)
+        provider = source_config.pop("provider", None)
+        owned = provider is None
+        if owned:
+            source_spec = source_config.pop("source_spec", None)
+            if source_spec is None:
+                dataset = reki.load_catalog(plugins=False, user=True).resolve(metadata.system_name)
+                source_spec = reki.SourceSpec(dataset.source.name, dataset.source.args,
+                    {**dataset.source.kwargs, **{key: value for key, value in source_config.items()
+                       if value is not None}})
+            provider = RekiProvider(source_spec)
+        try:
+            if isinstance(product, EnsembleT2MProduct):
+                prepared = product.prepare(provider, start_time=metadata.start_time,
+                    forecast_time=metadata.forecast_time,
+                    request=EnsembleRequest.from_params(metadata.params))
+                panel = prepared.render()
+            else:
+                context = metadata.compile_context()
+                if plot_type == "cn.t2m" and "style_variant" not in context.params:
+                    context = type(context)(start_time=context.start_time, forecast_time=context.forecast_time,
+                        params={**context.params, "style_variant": "cn_summer" if 5 <= metadata.start_time.month <= 9 else "cn_winter"})
+                panel = product.run(provider, context)
+            try:
+                panel.show()
+            finally:
+                panel.close()
+        finally:
+            if owned:
+                provider.close()
+        return
+
     from cedar_graph.recipes.engine import get_recipe_engine
 
     plot_module = get_plot_definition(
@@ -125,7 +165,10 @@ def show_plot(plot_type: str, plot_settings: dict, data_source_config: dict):
     )
 
     # plot -> output
-    panel.show()
+    try:
+        panel.show()
+    finally:
+        panel.close()
 
 
 def load(metadata, load_data_func: Callable, data_source: DataSource):

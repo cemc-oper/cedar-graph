@@ -1,4 +1,29 @@
 from dataclasses import dataclass
+from typing import Any, Mapping
+
+import pandas as pd
+
+from cedarkit.plots.workflow.plan import CompileContext
+
+
+@dataclass(frozen=True)
+class ProductMetadata:
+    """Normalized input metadata shared by quick plots and product plans."""
+
+    system_name: str
+    start_time: pd.Timestamp
+    forecast_time: pd.Timedelta
+    params: Mapping[str, Any]
+
+    @classmethod
+    def from_settings(cls, settings: Mapping[str, Any]) -> "ProductMetadata":
+        values = dict(settings)
+        return cls(str(values.pop("system_name")), pd.Timestamp(values.pop("start_time")),
+                   pd.Timedelta(values.pop("forecast_time")), values)
+
+    def compile_context(self) -> CompileContext:
+        return CompileContext(start_time=self.start_time, forecast_time=self.forecast_time,
+                              params=dict(self.params))
 
 
 @dataclass

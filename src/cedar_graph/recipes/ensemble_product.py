@@ -133,10 +133,22 @@ class PreparedEnsemble:
 class EnsembleT2MProduct:
     name: str = "cn.ens_t2m"
 
+    def compile_members(self, *, start_time: Any, forecast_time: Any,
+                        request: EnsembleRequest):
+        """Compile the same member reads used by prepare, without opening data."""
+        discovered = discover_workflow()
+        recipe = discovered.recipes.load("workflow.cn.ens_t2m_member")
+        variant = request.style_variant or ("cn_summer" if 5 <= pd.Timestamp(start_time).month <= 9 else "cn_winter")
+        ids = ((request.control_id,) if request.control_id else ()) + request.member_ids
+        return {member_id: compile_recipe(recipe, CompileContext(
+            start_time=start_time, forecast_time=forecast_time,
+            params={"member_id": member_id, "style_variant": variant}, cardinality="all"),
+            registry=discovered.ops) for member_id in ids}
+
     def prepare(self, provider: Any, *, start_time: Any, forecast_time: Any,
                 request: EnsembleRequest) -> PreparedEnsemble:
         discovered = discover_workflow()
-        recipe = discovered.recipes.load("workflow.cn.ens_t2m_member")
+        plans = self.compile_members(start_time=start_time, forecast_time=forecast_time, request=request)
         variant = request.style_variant or ("cn_summer" if 5 <= pd.Timestamp(start_time).month <= 9 else "cn_winter")
         fields: dict[str, xr.DataArray] = {}
         missing: list[str] = []
@@ -144,8 +156,7 @@ class EnsembleT2MProduct:
         reads = 0
         candidates = ([request.control_id] if request.control_id else []) + list(request.member_ids)
         for member_id in candidates:
-            plan = compile_recipe(recipe, CompileContext(start_time=start_time, forecast_time=forecast_time,
-                params={"member_id": member_id, "style_variant": variant}, cardinality="all"), registry=discovered.ops)
+            plan = plans[member_id]
             try:
                 result = plan.execute(_MissingAwareProvider(provider, member_id), registry=discovered.ops)
             except PlanExecutionError as exc:

@@ -7,7 +7,7 @@ from typing import Any
 
 from cedarkit.plots.workflow.discovery import discover_workflow
 from cedarkit.plots.workflow.plan import CompileContext, WorkflowPlan, compile_recipe
-from cedarkit.plots.workflow.recipe import LoadedRecipe
+from cedarkit.plots.workflow.recipe import LoadedRecipe, load_recipe
 from cedarkit.plots.workflow.render import render_result
 
 
@@ -42,3 +42,9 @@ def select_workflow_product(name: str) -> WorkflowProduct | None:
         return None
     discovered = discover_workflow()
     return WorkflowProduct(name, discovered.recipes.load(recipe_id), discovered)
+
+
+def load_workflow_product(path) -> WorkflowProduct:
+    """Load a caller-supplied v3 recipe with the same runtime as built-ins."""
+    discovered = discover_workflow()
+    return WorkflowProduct(str(path), load_recipe(path), discovered)

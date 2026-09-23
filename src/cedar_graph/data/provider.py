@@ -50,6 +50,17 @@ class RekiProvider:
         self._field_cache: dict[tuple[Any, ...], xr.DataArray | None] = {}
         self._cache_hits = 0
         self._cache_misses = 0
+        self._closed = False
+
+    def close(self) -> None:
+        """Release task-owned cached arrays and traces; leave the source alone."""
+        self._field_cache.clear()
+        self.trace.clear()
+        self._closed = True
+
+    def _ensure_open(self) -> None:
+        if self._closed:
+            raise RuntimeError("provider is closed")
 
     @property
     def cache_info(self) -> Mapping[str, int]:
@@ -108,6 +119,7 @@ class RekiProvider:
 
     def load(self, query: reki.FieldQuery, *, start_time=None,
              forecast_time=None, required: bool = True, parameter_id: str | None = None):
+        self._ensure_open()
         if not isinstance(query, reki.FieldQuery):
             raise TypeError("query must be a reki.FieldQuery")
         cache_key = self._field_cache_key(query, start_time, forecast_time, required, parameter_id)
@@ -158,14 +170,29 @@ class RekiProvider:
     # The source binding remains here, rather than in recipes or plans.
     def fetch(self, request: BoundFieldRequest):
         """Fetch one compiled request using its concrete time binding."""
+        self._ensure_open()
         capability = self._capability()
         if capability is not None and capability.direct_result:
-            return self._fetch_direct(request)
+            start_time, forecast_time = self._request_times(request.key)
+            cache_key = self._field_cache_key(request.key.query, start_time, forecast_time,
+                                              request.key.cardinality != "all", request.key.parameter_id)
+            if cache_key in self._field_cache:
+                self._cache_hits += 1
+                value = self._field_cache[cache_key]
+                self._append_trace(request, status="cached", duration=0)
+                return None if value is None else value.copy(deep=False)
+            self._cache_misses += 1
+            value = self._fetch_direct(request)
+            self._field_cache[cache_key] = value
+            return value.copy(deep=False)
         return self._fetch_selectable(request)
 
     def _fetch_selectable(self, request: BoundFieldRequest):
         started = perf_counter()
         start_time, forecast_time = self._request_times(request.key)
+        cache_key = self._field_cache_key(request.key.query, start_time, forecast_time,
+                                          request.key.cardinality != "all", request.key.parameter_id)
+        cached = cache_key in self._field_cache
         try:
             value = self.load(
                 request.key.query,
@@ -178,7 +205,7 @@ class RekiProvider:
             self._append_trace(request, status="error", duration=perf_counter() - started,
                                error_code=getattr(exc, "code", type(exc).__name__))
             raise
-        self._append_trace(request, status="missing" if value is None else "ok",
+        self._append_trace(request, status="cached" if cached else ("missing" if value is None else "ok"),
                            duration=perf_counter() - started)
         return value
 
@@ -212,31 +239,13 @@ class RekiProvider:
         return result
 
     def fetch_many(self, requests):
-        """Batch equivalent-time plan reads while preserving request order."""
+        """Fetch in order through the same cache and trace path as fetch."""
         requests = tuple(requests)
-        if not requests:
-            return []
-        first = requests[0]
-        if not hasattr(first.key, "time_binding"):
-            return [self.fetch(request) for request in requests]
-        capability = self._capability()
-        if capability is not None and capability.direct_result:
-            # MUSIC has no equivalent grid batch API.  Keep input order and
-            # fail at the first required request exactly as repeated fetch().
-            return [self.fetch(request) for request in requests]
-        if any(request.key.time_binding != first.key.time_binding for request in requests):
-            # The executor normally groups these; retain a safe provider-level
-            # fallback for direct callers.
-            return [self.fetch(request) for request in requests]
-        return self._load_many(
-            [request.key.query for request in requests],
-            start_time=first.key.time_binding.start_time,
-            forecast_time=first.key.time_binding.forecast_time,
-            required=first.key.cardinality != "all",
-        )
+        return [self.fetch(request) for request in requests]
 
     def check_many(self, requests):
         """Check metadata when supported; direct-result sources are unknown."""
+        self._ensure_open()
         capability = self._capability()
         if capability is not None and not capability.metadata_only:
             return ["unknown" for _ in requests]
