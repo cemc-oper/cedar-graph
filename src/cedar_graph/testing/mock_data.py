@@ -87,6 +87,9 @@ class MockDataSource(DataSource):
             field = self.retrieve(
                 info,
                 start_time=pd.Timestamp(key.start_time), forecast_time=pd.Timedelta(key.forecast_time))
+            if key.parameter_id == "cedarkit.t2m" and key.query.member is not None:
+                offset = (sum(ord(char) for char in str(key.query.member)) % 9) - 4
+                field = field + float(offset)
             units = resolve_parameter(key.parameter_id).record.unit
             if parameter_name == "qdiv":
                 units = "g/(hPa cm^2 s)"
