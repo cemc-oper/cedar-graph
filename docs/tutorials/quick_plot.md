@@ -3,72 +3,65 @@ mystnb:
   execution_mode: 'off'
 ---
 
-# 快速绘图
+# 挂载目录快绘
 
-{func}`cedar_graph.quickplot.quick_plot` 按产品 ID 选择 v3 workflow，
-用 reki 目录解析数据源并运行编译、数据处理和渲染。内置配方位于
-`cedar_graph/recipes/workflow/cn/`；`cn.shr.default` 等五个原 Python
-产品也使用同一条 workflow。产品清单见 {doc}`../api/recipes`。
+`quick_plot()` 按产品 ID 选择当前 workflow 产品，从 reki catalog 解析数据集，
+读取字段、执行 recipe 并显示最终 Panel。内置 YAML 产品和迁移后的诊断产品走同一
+条编译/执行路径。产品清单见 {doc}`../api/recipes`。
 
-## 默认范围下的 2 m 温度
+## 从 `/CMADAAS` 读取 CMA-GFS
 
 ```python
+import pandas as pd
 from cedar_graph.quickplot import quick_plot
 
 quick_plot(
     plot_type="cn.t2m",
     system_name="CMA-GFS",
-    start_time="2024073000",
-    forecast_time="48h",
+    start_time=pd.Timestamp("2026-09-22 00:00:00"),
+    forecast_time=pd.Timedelta("24h"),
+    data_class="cmadaas",
+    storage_base="/CMADAAS",
 )
 ```
 
-`start_time` 支持 `pd.Timestamp` 对象或 pandas 可解析的时间字符串。
-`forecast_time` 支持 `pd.Timedelta` 对象或 `"24h"` 这样的字符串。
+这是本地挂载文件访问，不会请求 CMADaaS 在线服务，也不需要在线服务凭据。目录
+结构须匹配 reki 对所选系统的路径模板。`quick_plot()` 自己创建并在显示后关闭
+Panel/provider；若需保存文件或控制窗口生命周期，请按
+{doc}`manual_plot` 直接运行产品并管理返回的 Panel。
 
-## 自定义区域的 10 m 风场
+## 产品参数
 
-需要画到子区域时，配合 `area_name` 与
-{class}`cedarkit.plots.types.AreaRange` 即可：
-
-```python
-from cedar_graph.quickplot import quick_plot
-from cedarkit.plots.types import AreaRange
-
-quick_plot(
-    plot_type="cn.wind_10m",
-    system_name="CMA-MESO",
-    start_time="2024073000",
-    forecast_time="48h",
-    area_name="NorthEast",
-    area_range=AreaRange.from_tuple((108, 137, 37, 55)),
-)
-```
-
-## 带参数的图种
-
-配方声明的参数（见 {doc}`recipe`）作为 `quick_plot` 的关键字参数
-传入，例如 K 指数 + 风场的风场层次、降水图形的降水时段：
+recipe 声明的参数通过关键字传入。例如，K 指数图要求风场层次；降水与风场组合
+图要求累计时段：
 
 ```python
 quick_plot(
     plot_type="cn.kidx_wind",
     system_name="CMA-GFS",
-    start_time="2024073000",
-    forecast_time="48h",
-    wind_level=850.0,          # 必需参数
+    start_time=pd.Timestamp("2026-09-22T00:00"),
+    forecast_time=pd.Timedelta("24h"),
+    data_class="cmadaas",
+    storage_base="/CMADAAS",
+    wind_level=850,
 )
 
 quick_plot(
     plot_type="cn.rain_wind_10m",
     system_name="CMA-GFS",
-    start_time="2024073000",
-    forecast_time="48h",
-    interval="24h",            # 降水时段
+    start_time=pd.Timestamp("2026-09-22T00:00"),
+    forecast_time=pd.Timedelta("24h"),
+    data_class="cmadaas",
+    storage_base="/CMADAAS",
+    interval="3h",
 )
 ```
 
-## 不在 CMA-HPC 时
+集合产品 `cn.ens_t2m` 使用实际扰动成员 ID，可选 control、MAX 与缺测策略。它们
+不是从输入数组位置推测的，示例任务参数见 `cemc-plots-kit` 的集合 YAML。
 
-在 CMA-HPC 之外，可按 {doc}`manual_plot` 使用
-{class}`cedar_graph.testing.MockDataSource` 执行相同的产品。
+## 没有业务挂载时
+
+文档和测试使用 {class}`cedar_graph.testing.MockDataSource`，它实现相同 provider
+协议并生成确定性合成场。无需调用 CMADaaS，也无需改 recipe；参见
+{doc}`mock_data`。

@@ -8,7 +8,7 @@ mystnb:
 直接选择 v3 产品可检查静态计划，再用自定义 provider 执行。
 下面用合成数据绘制 500 hPa 高度场与海平面气压。
 
-```{code-cell} python
+```python
 from cedar_graph.recipes.workflow_product import select_workflow_product
 from cedar_graph.testing import MockDataSource
 from cedarkit.plots.workflow.plan import CompileContext
@@ -20,7 +20,7 @@ print(plan.summary())
 
 panel = product.run(MockDataSource(resolution=2), context)
 try:
-    panel.show()
+    panel.save("height-500-psl.png")
 finally:
     panel.close()
 ```

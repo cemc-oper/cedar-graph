@@ -54,6 +54,7 @@ field
 下面直接选择产品、编译并运行；产品数值回归见 `tests/mock/test_workflow_recipes.py`。
 
 ```{code-cell} python
+%matplotlib inline
 from cedar_graph.recipes.workflow_product import select_workflow_product
 from cedarkit.plots.workflow.plan import CompileContext
 

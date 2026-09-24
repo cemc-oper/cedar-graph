@@ -3,25 +3,11 @@ mystnb:
   execution_mode: 'off'
 ---
 
-# Workflow products
+# workflow 绘图产品
 
-Built-in graph products compile versioned workflow recipes into field
-requests, execute them through a provider, then render a caller-owned Panel.
-Diagnostic calculations are registered as workflow operations; they do not
-provide a parallel `load_data`/`plot` product API.
+内置产品将版本化 workflow recipe 编译为字段请求，经 provider 执行，再渲染
+调用方所有的 Panel。诊断运算注册为 workflow ops，不再提供并行的
+`load_data`/`plot` 产品 API。
 
-```{eval-rst}
-.. automodule:: cedar_graph.recipes.workflow_product
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-## Collection products
-
-```{eval-rst}
-.. automodule:: cedar_graph.recipes.ensemble_product
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
+产品选择、静态编译、集合请求和公开类型的完整签名见
+[workflow 产品 API](recipes.md)。数据 provider 和业务算子接口见[数据 API](data.md)。

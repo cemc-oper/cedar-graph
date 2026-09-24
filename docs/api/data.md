@@ -3,7 +3,7 @@ mystnb:
   execution_mode: 'off'
 ---
 
-# `cedar_graph.data`
+# 数据接口
 
 ```{eval-rst}
 .. automodule:: cedar_graph.data
@@ -12,47 +12,28 @@ mystnb:
    :show-inheritance:
 ```
 
-## Reki provider
+## ReKi provider
 
-`RekiProvider` binds an immutable `reki.SourceSpec` and runtime times to a
-source-neutral `BoundFieldRequest`. Workflow products and mock providers use
-the same `fetch`/`fetch_many` contract.
+`RekiProvider` 将 ReKi 数据源绑定到 workflow 的 `BoundFieldRequest` 协议。
+产品计划保存稳定 parameter ID、FieldQuery 和时次，不保存 catalog 数据代码、源
+名称或凭据。provider 在实际执行边界接收 `SourceSpec`，并通过 `fetch()`/
+`fetch_many()` 返回已规范化和验证的 xarray 字段。
 
-For a selectable local GRIB source, the provider keeps the established
-`from_source(...).sel(FieldQuery).one()` / `one_or_none()` path.  A CMADaaS
-`model_grid` source advertises a direct-result capability instead: before it
-constructs the source, the provider combines the stable `parameter_id`, its
-concrete `FieldQuery`, and the request time with
-`reki.bind_cmadaas_request()`.  The returned in-memory field is normalized and
-validated directly; it is never selected again with `.sel()`.
+常规本地 GRIB reader 使用 reki 的选择接口。具备 CMADaaS direct-result 能力的源会
+在创建 reader 前将稳定参数 ID、具体查询与时次绑定成请求；返回的内存字段直接做
+校验，不会再执行 `.sel()`。对不能只查 metadata 的服务，`check_many()` 返回
+`unknown`，不会为判定可用性提前读取整个网格。
 
-Recipes and `PlotPlan` therefore remain source-neutral: they contain neither a
-CMADaaS code, catalog data code, source name, nor credentials.  Resolve the
-catalog record at the execution boundary and pass it to the provider:
-
-```python
-import reki
-from cedar_graph.data import RekiProvider
-
-dataset = reki.load_catalog().resolve("CMA-GFS-CMADaaS")
-provider = RekiProvider(dataset, region={"min_lon": 116, "max_lon": 117,
-                                         "min_lat": 39, "max_lat": 40})
-result = plan.execute(provider)
-```
-
-`fetch_many()` preserves request order and falls back to individual CMADaaS
-requests when the service has no equivalent batch API. `check_many()` returns
-`"unknown"` for a direct-result source because CMADaaS has no metadata-only
-check; it does not download a grid merely to determine availability. The
-public `ProviderTrace` records catalog origin, parameter identity, external
-code, time and status, but excludes client configuration and authentication.
+`ProviderTrace` 记录 catalog 来源、参数身份、时次和请求状态，不包含客户端配置或
+认证信息。`close()` 清除 provider 自身的字段缓存与 trace；调用方负责按任务生命周
+期关闭自己创建的 provider。
 
 ```{eval-rst}
 .. automodule:: cedar_graph.data.provider
    :members:
 ```
 
-## 数据算子（Operator）
+## 数据算子
 
 ```{eval-rst}
 .. automodule:: cedar_graph.data.operator
@@ -61,11 +42,12 @@ code, time and status, but excludes client configuration and authentication.
    :show-inheritance:
 ```
 
-## 绘图元信息（Metadata）
+## 产品元信息
 
 ```{eval-rst}
 .. automodule:: cedar_graph.metadata
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 ```

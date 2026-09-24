@@ -11,42 +11,37 @@ kernelspec:
   name: python3
 ---
 
-# 2 米温度（`cn.t2m`）
+# 2 m 温度（`cn.t2m`）
 
-本图由配方 `cedar_graph/recipes/cn/t2m.yaml` 驱动——配方经
-{func}`~cedarkit.plots.engine.loader.get_plot_definition` 加载后
-暴露与 Python 绘图模块相同的三件套接口（`PlotMetadata` /
-`load_data` / `plot`）。运行时按起报月份自动选择夏/冬色标。
+此产品通过 `cedarkit.plots/v3` workflow 选择数据请求、单位准备、样式和逻辑绘图内容。
+固定使用暖季样式 `cn_summer`。下面使用固定日期、24 小时时效和
+`MockDataSource(resolution=2)`，文档构建时执行并直接显示图像，不生成仓库内图片。
 
 ```{code-cell} python
-import pandas as pd
+%matplotlib inline
+import matplotlib as mpl
+from IPython.display import display
+from cedar_graph.recipes.workflow_product import select_workflow_product
+from cedar_graph.testing import MockDataSource
+from cedarkit.plots.workflow.plan import CompileContext
 
-from cedar_graph.recipes.engine import get_recipe_engine
-from cedar_graph.testing import build_mock_data_loader
-from cedarkit.plots.engine.loader import get_plot_definition
+mpl.rcParams["font.family"] = "DejaVu Sans"
 
-start_time = pd.Timestamp("2024-07-01 00:00:00")
-forecast_time = pd.Timedelta(hours=24)
-
-plot_module = get_plot_definition(
-    plot_type="cn.t2m",
-    base_module_name="cedar_graph.plots",
-    recipe_base_module="cedar_graph.recipes",
-    engine=get_recipe_engine(),
+product = select_workflow_product("cn.t2m")
+assert product is not None
+source = MockDataSource(resolution=2)
+context = CompileContext(
+    start_time="2024-07-01T00:00:00",
+    forecast_time="24h",
+    params={"style_variant": "cn_summer"},
 )
-
-data_loader = build_mock_data_loader()
-plot_data = plot_module.load_data(
-    data_loader=data_loader,
-    start_time=start_time,
-    forecast_time=forecast_time,
-)
-metadata = plot_module.PlotMetadata(
-    start_time=start_time,
-    forecast_time=forecast_time,
-    system_name="CMA-GFS",
-    sample_step=0.5,
-)
-panel = plot_module.plot(plot_data=plot_data, plot_metadata=metadata)
-panel.show()
+panel = product.run(source, context)
+try:
+    print(f"provider requests: {len(source.workflow_requests)}")
+    display(panel.render())
+finally:
+    panel.close()
 ```
+
+mock 字段用于复现流程与图层组合，不代表真实预报产品数值。真实数据绘图使用
+[快绘入口](../tutorials/quick_plot.md) 或传入 `RekiProvider`，不修改产品 recipe。

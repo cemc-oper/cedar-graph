@@ -3,18 +3,16 @@ mystnb:
   execution_mode: 'off'
 ---
 
-# Core concepts
+# 核心概念
 
-cedar-graph selects a versioned workflow product, compiles it into field
-requests, executes those requests through a provider, and renders the result
-as a `cedarkit.plots.Panel`.
+cedar-graph 选择版本化 workflow 产品，将其编译为字段请求，经 provider 执行，最后
+渲染为 `cedarkit.plots.Panel`。
 
-## Products and providers
+## 产品与 provider
 
-Built-in products use workflow recipes and registered diagnostic operations.
-`RekiProvider` adapts a `reki.SourceSpec` to the workflow field-request
-contract. `MockDataSource` implements the same contract with deterministic
-synthetic fields, so a product can run without mounted operational data.
+内置产品使用 v3 workflow recipe 和注册算子。`RekiProvider` 将 `reki.SourceSpec`
+适配为 workflow 字段读取接口；`MockDataSource` 实现相同协议并生成固定合成字段，
+因此产品不需要挂载业务数据也能运行。
 
 ```python
 from cedar_graph.recipes.workflow_product import select_workflow_product
@@ -34,14 +32,14 @@ finally:
     panel.close()
 ```
 
-For mounted GRIB2 data, resolve a dataset from the reki catalog and pass its
-`SourceSpec` to `RekiProvider`. The convenience `quick_plot` function performs
-that catalog resolution from the selected system name.
+真实 GRIB2 运行时从 reki catalog 解析数据源后传给 `RekiProvider`。
+`quick_plot()` 根据产品的 `system_name` 执行便捷 catalog 解析，示例见
+{doc}`../tutorials/quick_plot`。
 
-## Workflow recipes
+## workflow recipe 与绘图内容
 
-A recipe declares field requests, registered operations, styles, and display
-content. `WorkflowProduct.compile()` returns a source-neutral plan;
-`WorkflowProduct.run()` executes and renders it. Custom recipe files use the
-same v3 schema and can be selected by the app task runner. See
-{doc}`../tutorials/recipe_v3` for the current recipe format.
+recipe 声明字段请求、注册算子、样式、逻辑绘图内容和展示配置。
+`WorkflowProduct.compile()` 返回 source-neutral 的 workflow 计划；
+`WorkflowProduct.run()` 执行并渲染当前 `Panel` 内容模型。自定义 recipe 也使用
+同一个 v3 schema，可由 app task runner 选择。schema 与静态检查见
+{doc}`../tutorials/recipe`。

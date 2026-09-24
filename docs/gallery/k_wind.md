@@ -1,53 +1,18 @@
 ---
-jupytext:
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.16.4
-kernelspec:
-  display_name: Python 3
-  language: python
-  name: python3
+mystnb:
+  execution_mode: 'off'
 ---
 
-# K 指数 + 风场（`cn.kidx_wind`）
+# K 指数与风场（`cn.kidx_wind`）
 
-本图由配方 `cedar_graph/recipes/cn/kidx_wind.yaml` 驱动——
-风场层次由必需参数 `wind_level` 指定（层次模板 `"{wind_level}"`），
-矢量图层叠加 K 指数填色。
+此产品通过 `cedarkit.plots/v3` workflow 选择数据请求、单位准备、样式和逻辑绘图内容。 必需参数 wind_level=850。
 
-```{code-cell} python
-import pandas as pd
+使用固定日期 `2024-07-01 00 UTC`、24 小时时效和 `MockDataSource(resolution=2)` 可在本地重新渲染：
 
-from cedar_graph.recipes.engine import get_recipe_engine
-from cedar_graph.testing import build_mock_data_loader
-from cedarkit.plots.engine.loader import get_plot_definition
-
-start_time = pd.Timestamp("2024-07-01 00:00:00")
-forecast_time = pd.Timedelta(hours=24)
-
-plot_module = get_plot_definition(
-    plot_type="cn.kidx_wind",
-    base_module_name="cedar_graph.plots",
-    recipe_base_module="cedar_graph.recipes",
-    engine=get_recipe_engine(),
-)
-
-data_loader = build_mock_data_loader()
-plot_data = plot_module.load_data(
-    data_loader=data_loader,
-    start_time=start_time,
-    forecast_time=forecast_time,
-    wind_level=850.0,
-)
-metadata = plot_module.PlotMetadata(
-    start_time=start_time,
-    forecast_time=forecast_time,
-    system_name="CMA-GFS",
-    sample_step=0.5,
-    wind_level=850.0,
-)
-panel = plot_module.plot(plot_data=plot_data, plot_metadata=metadata)
-panel.show()
+```bash
+MPLBACKEND=Agg MPLCONFIGDIR=/tmp/cedar-graph-docs-mpl \
+  uv run python docs/examples/render_mock_products.py /tmp/cedar-graph-docs --plot cn.kidx_wind
 ```
+
+mock 字段用于复现流程与图层组合，不代表真实预报产品数值。真实数据绘图使用
+[快绘入口](../tutorials/quick_plot.md) 或传入 `RekiProvider`，不修改产品 recipe。

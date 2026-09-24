@@ -1,46 +1,18 @@
 ---
-jupytext:
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.16.4
-kernelspec:
-  display_name: Python 3
-  language: python
-  name: python3
+mystnb:
+  execution_mode: 'off'
 ---
 
-# 散度 + 风场（`cn.div_wind`）
+# 散度与风场（`cn.div_wind.default`）
 
-```{code-cell} python
-import pandas as pd
+此产品通过 `cedarkit.plots/v3` workflow 选择数据请求、单位准备、样式和逻辑绘图内容。 使用迁移后的 workflow 诊断产品。
 
-from cedar_graph.data import DataLoader
-from cedar_graph.testing import MockDataSource
-from cedar_graph.plots.cn.div_wind.default import PlotMetadata, load_data, plot
+使用固定日期 `2024-07-01 00 UTC`、24 小时时效和 `MockDataSource(resolution=2)` 可在本地重新渲染：
 
-start_time = pd.Timestamp("2024-07-01 00:00:00")
-forecast_time = pd.Timedelta(hours=24)
-div_level = 850.0
-wind_level = 850.0
-
-data_loader = DataLoader(data_source=MockDataSource())
-plot_data = load_data(
-    data_loader=data_loader,
-    start_time=start_time,
-    forecast_time=forecast_time,
-    div_level=div_level,
-    wind_level=wind_level,
-)
-metadata = PlotMetadata(
-    start_time=start_time,
-    forecast_time=forecast_time,
-    system_name="CMA-GFS",
-    div_level=div_level,
-    wind_level=wind_level,
-    sample_step=0.5,
-)
-panel = plot(plot_data=plot_data, plot_metadata=metadata)
-panel.show()
+```bash
+MPLBACKEND=Agg MPLCONFIGDIR=/tmp/cedar-graph-docs-mpl \
+  uv run python docs/examples/render_mock_products.py /tmp/cedar-graph-docs --plot cn.div_wind.default
 ```
+
+mock 字段用于复现流程与图层组合，不代表真实预报产品数值。真实数据绘图使用
+[快绘入口](../tutorials/quick_plot.md) 或传入 `RekiProvider`，不修改产品 recipe。
