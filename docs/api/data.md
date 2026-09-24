@@ -12,30 +12,11 @@ mystnb:
    :show-inheritance:
 ```
 
-## 数据源（Source）
-
-```{eval-rst}
-.. automodule:: cedar_graph.data.source
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-## 数据加载器（Loader）
-
-```{eval-rst}
-.. automodule:: cedar_graph.data.loader
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
 ## Reki provider
 
 `RekiProvider` binds an immutable `reki.SourceSpec` and runtime times to a
-source-neutral `BoundFieldRequest`.  Existing `DataSource` and `DataLoader`
-remain supported. A `DataLoader(provider=...)` adapts legacy `FieldInfo`
-values through `FieldInfo.to_field_query()`.
+source-neutral `BoundFieldRequest`. Workflow products and mock providers use
+the same `fetch`/`fetch_many` contract.
 
 For a selectable local GRIB source, the provider keeps the established
 `from_source(...).sel(FieldQuery).one()` / `one_or_none()` path.  A CMADaaS
@@ -69,15 +50,6 @@ code, time and status, but excludes client configuration and authentication.
 ```{eval-rst}
 .. automodule:: cedar_graph.data.provider
    :members:
-```
-
-## 字段元信息（Field info）
-
-```{eval-rst}
-.. automodule:: cedar_graph.data.field_info
-   :members:
-   :undoc-members:
-   :show-inheritance:
 ```
 
 ## 数据算子（Operator）

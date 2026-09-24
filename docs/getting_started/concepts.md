@@ -3,67 +3,45 @@ mystnb:
   execution_mode: 'off'
 ---
 
-# 核心概念
+# Core concepts
 
-cedar-graph 的对外接口由若干互相协作的小组件构成。理解它们
-有助于阅读现有的绘图模块，也方便添加新的图种。
+cedar-graph selects a versioned workflow product, compiles it into field
+requests, executes those requests through a provider, and renders the result
+as a `cedarkit.plots.Panel`.
 
-## DataSource
+## Products and providers
 
-{class}`~cedar_graph.data.DataSource` 描述了"如何根据
-{class}`~cedar_graph.data.FieldInfo`、`start_time`、
-`forecast_time` 取出某一个场"的能力。
-
-cedar-graph 内置了两种实现：
-
-- {class}`~cedar_graph.data.LocalDataSource`：在 CMA-HPC
-  共享文件系统上通过 reki 的 `local` source 解析路径，
-  使用 ecCodes 读取 GRIB2 字段。
-- {class}`cedar_graph.testing.MockDataSource`：解析式生成
-  合成场，本文档与 mock 测试都使用这一实现。
-
-## DataLoader
-
-{class}`~cedar_graph.data.DataLoader` 包装一个 `DataSource`，
-对外暴露统一的 `load(field_info, start_time, forecast_time)`
-方法。绘图模块只与 loader 交互，不直接调用 data source —
-这正是真实数据与 mock 数据可以无感切换的原因。
-
-## 图种定义：配方与绘图模块
-
-一个图种定义可以是 **YAML 配方**（`cedar_graph/recipes/cn/*.yaml`，
-大多数图种）或 **Python 绘图模块**（`cedar_graph.plots.cn` 下的
-逃生舱模块）。两者对外暴露相同的三件套接口：
+Built-in products use workflow recipes and registered diagnostic operations.
+`RekiProvider` adapts a `reki.SourceSpec` to the workflow field-request
+contract. `MockDataSource` implements the same contract with deterministic
+synthetic fields, so a product can run without mounted operational data.
 
 ```python
-@dataclass
-class PlotMetadata:
-    start_time: pd.Timestamp = None
-    forecast_time: pd.Timedelta = None
-    system_name: str = None
-    # 该图种自身的额外配置项，例如 area_range、wind_level …
+from cedar_graph.recipes.workflow_product import select_workflow_product
+from cedar_graph.testing import MockDataSource
+from cedarkit.plots.workflow.plan import CompileContext
 
-@dataclass
-class PlotData:
-    field_x: xr.DataArray
-    # 其它已经准备好可以直接绘图的字段
-
-def load_data(data_loader, start_time, forecast_time, **kwargs) -> PlotData: ...
-
-def plot(plot_data: PlotData, plot_metadata: PlotMetadata) -> Panel: ...
+product = select_workflow_product("cn.t2m")
+context = CompileContext(
+    start_time="2024-07-01",
+    forecast_time="24h",
+    params={"style_variant": "cn_summer"},
+)
+panel = product.run(MockDataSource(resolution=2), context)
+try:
+    panel.show()
+finally:
+    panel.close()
 ```
 
-配方的 `PlotMetadata` / `PlotData` 由
-{class}`~cedarkit.plots.engine.engine.PlotModuleAdapter`
-按配方内容动态生成。`load_data` 负责调取数据并完成必要的预处理；
-`plot` 在此基础上构造 {class}`cedarkit.plots.chart.Panel`，
-画底图、风羽、等值线，设置标题与色标，最后返回 Panel。
+For mounted GRIB2 data, resolve a dataset from the reki catalog and pass its
+`SourceSpec` to `RekiProvider`. The convenience `quick_plot` function performs
+that catalog resolution from the selected system name.
 
-## quick_plot
+## Workflow recipes
 
-{func}`cedar_graph.quickplot.quick_plot` 是面向 CMA-HPC 交互式
-使用的便捷入口。给定图种名称（例如 `"cn.t2m"`）、
-业务系统名以及预报时间参数，装载器先查配方、再查 Python 模块，
-然后创建 `LocalDataSource`、依次调用 `load_data` 与 `plot`。
-入参支持字符串形式的时间（如 `"2025081900"`）和时间间隔
-（如 `"24h"`）。
+A recipe declares field requests, registered operations, styles, and display
+content. `WorkflowProduct.compile()` returns a source-neutral plan;
+`WorkflowProduct.run()` executes and renders it. Custom recipe files use the
+same v3 schema and can be selected by the app task runner. See
+{doc}`../tutorials/recipe_v3` for the current recipe format.

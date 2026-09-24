@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 
 from cedarkit.comp.smooth import smth9
-from cedar_graph.data.field_info import field_info_from_parameter
 from cedar_graph.recipes.workflow_product import select_workflow_product
 from cedar_graph.testing import MockDataSource
 from cedarkit.plots.workflow.plan import CompileContext
@@ -30,9 +29,9 @@ def _context(params):
 
 
 def _raw(source, parameter, name, level, level_type=100):
-    info = field_info_from_parameter(parameter, name=name)
-    info.level, info.level_type = level, level_type
-    return source.retrieve(info, pd.Timestamp("2024-07-01"), pd.Timedelta("24h"))
+    return source.field(parameter, name=name, level=level, level_type=level_type,
+                        start_time=pd.Timestamp("2024-07-01"),
+                        forecast_time=pd.Timedelta("24h"))
 
 
 @pytest.mark.parametrize("name,params,reads,styles", CASES)

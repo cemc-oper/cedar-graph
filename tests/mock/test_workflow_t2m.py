@@ -6,7 +6,6 @@ import reki
 import xarray as xr
 
 from cedar_graph.data import RekiProvider
-from cedar_graph.data.field_info import field_info_from_parameter
 from cedar_graph.recipes.workflow_product import select_workflow_product
 from cedar_graph.testing import MockDataSource
 from cedarkit.plots.workflow.plan import CompileContext
@@ -33,8 +32,9 @@ def test_t2m_product_selects_seasonal_style_and_converts_once():
     assert len(provider.workflow_requests) == 1
     assert provider.workflow_requests[0].key.parameter_id == "cedarkit.t2m"
     assert output.attrs["units"] == "degC"
-    source = provider.retrieve(field_info_from_parameter("cedarkit.t2m", name="t2m"),
-                               pd.Timestamp("2024-07-01"), pd.Timedelta("24h"))
+    source = provider.field("cedarkit.t2m", name="t2m",
+                            start_time=pd.Timestamp("2024-07-01"),
+                            forecast_time=pd.Timedelta("24h"))
     np.testing.assert_allclose(output.values, source.values - 273.15)
 
     panel = product.run(MockDataSource(resolution=2), CompileContext(

@@ -22,31 +22,26 @@ cedar-graph 的真实使用场景是从 CMA-HPC 上读取 GRIB2 文件，
 mock 测试套件 (`tests/mock/`) 与本文档样例都使用同一份 mock
 数据，从而保证文档中看到的画图行为与 CI 验证的行为一致。
 
-## 构造一个 mock 数据加载器
+## 构造 mock provider 并读取一个字段
 
 ```{code-cell} python
 import pandas as pd
 
-from cedar_graph.testing import MockDataSource, build_mock_data_loader
+from cedar_graph.testing import MockDataSource
 
-# 直接构造一个 loader …
-data_loader = build_mock_data_loader()
-
-# … 或先创建数据源，便于复用或检查内容。
+# 可复用 mock provider，也可单独请求一个字段。
 mock_source = MockDataSource(resolution=0.25)
 ```
 
-`MockDataSource.retrieve` 根据 `field_info.name` 在覆盖东亚区域的
+`MockDataSource.field` 根据稳定参数 ID 在覆盖东亚区域的
 规则经纬度网格上生成一个 {class}`xarray.DataArray`：
 
 ```{code-cell} python
-from cedar_graph.data.field_info import t_2m_info
-
 start_time = pd.Timestamp("2024-07-01 00:00:00")
 forecast_time = pd.Timedelta(hours=24)
 
-field = mock_source.retrieve(
-    field_info=t_2m_info,
+field = mock_source.field(
+    parameter_id="cedarkit.t2m",
     start_time=start_time,
     forecast_time=forecast_time,
 )
@@ -79,9 +74,8 @@ finally:
 
 ## 字段名速查表
 
-`MockDataSource` 主要按 {class}`~cedar_graph.data.FieldInfo` 中的
-`name` 属性匹配解析公式；当 `name` 被多种物理量复用（CAPE 与 CIN
-都使用 `cape`），还会回退到 `parameter.wgrib2_name` 区分。下表给出
+`MockDataSource` 主要按 workflow parameter ID 选择解析公式；CAPE 与
+CIN 虽共用一个 GRIB 字段名，仍由各自 parameter ID 区分。下表给出
 mock 内置字段及其大致取值范围与物理特征。未列出的字段名会落到
 通用的正弦余弦表达式上。
 

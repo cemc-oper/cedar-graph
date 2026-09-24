@@ -20,9 +20,8 @@ CMA-GEPS 等）输出的高级绘图库，构建在 `reki`、`cedarkit-comp`、
 - **业务样式库**：CEMC 业务色标集中在 `cedar_graph/styles/cn/`
   的 YAML 样式文件中，经 entry point 注入 cedarkit-plots 的
   样式注册表。
-- **数据源可替换**：图种定义只与 {class}`~cedar_graph.data.DataLoader`
-  交互。CMA-HPC 上使用 {class}`~cedar_graph.data.LocalDataSource`
-  读取真实 GRIB2 数据；测试与文档使用
+- **来源可替换**：workflow plan 通过字段请求 provider 读取数据。CMA-HPC
+  使用 `RekiProvider` 访问 reki source；测试与文档使用
   {class}`~cedar_graph.testing.MockDataSource` 生成合成场。
 - **覆盖常见预报量**：地面要素、高空形势场、降水、对流参数、
   风切变等多种典型预报图。

@@ -95,25 +95,32 @@ must match the reki templates for the selected system.
 For portable scripts, notebooks, and debugging, use a product definition with
 an explicit data source instead. The [manual plotting tutorial](docs/tutorials/manual_plot.md)
 shows the same workflow using `MockDataSource`, which works without access to
-operational data. To read mounted data in that workflow, create
-`LocalDataSource(system_name="CMA-GFS", data_class="cmadaas",
-storage_base="/CMADAAS")`.
+operational data. Mounted data can be read by passing a catalog-resolved
+`reki.SourceSpec` to `RekiProvider`.
 
 ## Product model
 
-Each product is provided by either a YAML recipe under `cedar_graph/recipes/`
-or a Python module under `cedar_graph/plots/`. Both expose the same three-part
-interface:
+Each product is a v3 workflow recipe under `cedar_graph/recipes/workflow/`.
+Diagnostic calculations are registered as workflow operations, and the same
+compiled plan can run against `RekiProvider` or `MockDataSource`:
 
 ```python
-PlotMetadata                 # Product metadata and product-specific options
-load_data(data_loader, ...)  # Source data to fields ready for plotting
-plot(plot_data, metadata)    # Fields to a cedarkit.plots Panel
+from cedar_graph.recipes.workflow_product import select_workflow_product
+from cedar_graph.testing import MockDataSource
+from cedarkit.plots.workflow.plan import CompileContext
+
+product = select_workflow_product("cn.t2m")
+context = CompileContext(start_time="2024-07-01", forecast_time="24h",
+                         params={"style_variant": "cn_summer"})
+panel = product.run(MockDataSource(resolution=2), context)
+try:
+    panel.show()
+finally:
+    panel.close()
 ```
 
-The loader searches YAML recipes first, then Python modules. This makes product
-type names such as `cn.t2m`, `cn.h_500_psl`, and `cn.shr.default` consistent
-across quick plots, applications, tests, and documentation.
+Product IDs such as `cn.t2m`, `cn.h_500_psl`, and `cn.shr.default` are shared
+by quick plots, applications, tests, and documentation.
 
 Available products include surface fields, upper-air analyses, precipitation,
 convection diagnostics, wind shear, and moisture diagnostics. Browse the

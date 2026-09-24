@@ -4,15 +4,15 @@ Mock data source for tests and documentation examples.
 The :class:`MockDataSource` defined here generates synthetic
 :class:`xarray.DataArray` objects on a regular latitude/longitude grid
 covering the East Asia domain. Field values are computed from
-deterministic analytic patterns keyed by ``field_info.name``, so that
+deterministic analytic patterns keyed by stable workflow parameter IDs, so that
 both the unit tests and the docs gallery produce identical output
 without requiring access to real NWP data files on CMA-HPC.
 
 The patterns are not full atmospheric simulations but are designed to
 be **physically plausible** at first glance:
 
-- Pressure-level fields (``t``, ``dpt``, ``h``) depend on
-  ``field_info.level`` with a realistic lapse rate / hypsometric
+- Pressure-level fields (``t``, ``dpt``, ``h``) depend on the request's
+  level with a realistic lapse rate / hypsometric
   scaling, so the same plot called at 850 hPa and 500 hPa gives
   visibly different and reasonable results.
 - Wind components (``u``, ``v``) differ between 10 m and pressure
@@ -27,18 +27,45 @@ be **physically plausible** at first glance:
 """
 from __future__ import annotations
 
-from typing import Optional
+from dataclasses import dataclass
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
-from cedar_graph.data import DataLoader
-from cedar_graph.data.field_info import FieldInfo, field_info_from_parameter
-from cedar_graph.data.source import DataSource
+_MOCK_PARAMETER_NAMES = {
+    "cedarkit.bli": "bli",
+    "cedarkit.cape": "cape",
+    "cedarkit.cdbz": "cr",
+    "cedarkit.cin": "cape",
+    "cedarkit.h": "h",
+    "cedarkit.psl": "mslp",
+    "cedarkit.kidx": "k",
+    "cedarkit.rain": "apcp",
+    "cedarkit.sf": "asnow",
+    "cedarkit.rh2m": "rh2m",
+    "cedarkit.u": "u",
+    "cedarkit.v": "v",
+    "cedarkit.t2m": "t2m",
+    "cedarkit.div": "div",
+    "cedarkit.qdiv": "qv_div",
+    "cedarkit.theta-se": "pte",
+    "cedarkit.shr": "vwsh",
+    "cedarkit.t": "t",
+    "cedarkit.td": "dpt",
+}
 
 
-class MockDataSource(DataSource):
+@dataclass(frozen=True)
+class _MockField:
+    parameter_id: str
+    name: str
+    level_type: Any = None
+    level: Any = None
+
+
+class MockDataSource:
     """
     A mock data source that generates synthetic 2D fields.
 
@@ -55,7 +82,6 @@ class MockDataSource(DataSource):
     """
 
     def __init__(self, resolution: float = 0.25):
-        super().__init__()
         self.resolution = resolution
         # Grid covering East Asia + buffer
         self.lon = np.arange(60, 150 + resolution, resolution)
@@ -64,29 +90,21 @@ class MockDataSource(DataSource):
         self.workflow_requests = []
 
     def fetch_many(self, requests):
-        """Serve v3 workflow requests with the same deterministic fields."""
+        """Serve v3 workflow requests with deterministic synthetic fields."""
         from reki import resolve_parameter
 
         result = []
         for request in requests:
             self.workflow_requests.append(request)
             key = request.key
-            supported = {"bli", "cape", "cdbz", "cin", "h", "psl", "kidx", "rain", "sf",
-                         "rh2m", "u", "v", "t2m", "div", "qdiv", "theta-se", "shr", "t", "td"}
             parameter_name = key.parameter_id.removeprefix("cedarkit.")
-            if parameter_name not in supported and not parameter_name.startswith("shr-0-"):
-                raise ValueError(f"unsupported mock workflow parameter {key.parameter_id!r}")
-            info = field_info_from_parameter(key.parameter_id)
-            info.name = {"psl": "mslp", "cdbz": "cr", "kidx": "k", "rain": "apcp",
-                         "sf": "asnow", "cin": "cape", "qdiv": "qv_div",
-                         "thetaSe": "pte", "shr": "vwsh", "td": "dpt"}.get(info.name, info.name)
-            if parameter_name.startswith("shr-0-"):
-                info.name = "vwsh"
-            info.level_type = key.query.level_type or key.query.extra.get("first_level_type")
-            info.level = key.query.level or key.query.extra.get("first_level")
-            field = self.retrieve(
-                info,
-                start_time=pd.Timestamp(key.start_time), forecast_time=pd.Timedelta(key.forecast_time))
+            field = self.field(
+                key.parameter_id,
+                level_type=key.query.level_type or key.query.extra.get("first_level_type"),
+                level=key.query.level or key.query.extra.get("first_level"),
+                start_time=pd.Timestamp(key.start_time) if key.start_time is not None else None,
+                forecast_time=pd.Timedelta(key.forecast_time) if key.forecast_time is not None else None,
+            )
             if key.parameter_id == "cedarkit.t2m" and key.query.member is not None:
                 offset = (sum(ord(char) for char in str(key.query.member)) % 9) - 4
                 field = field + float(offset)
@@ -101,52 +119,31 @@ class MockDataSource(DataSource):
             result.append(field)
         return result
 
-    def retrieve(
-            self,
-            field_info: FieldInfo,
-            start_time: pd.Timestamp,
-            forecast_time: pd.Timedelta,
-            **kwargs,
+    def field(
+        self,
+        parameter_id: str,
+        *,
+        name: str | None = None,
+        level_type: Any = None,
+        level: Any = None,
+        start_time: pd.Timestamp | None = None,
+        forecast_time: pd.Timedelta | None = None,
     ) -> xr.DataArray:
-        """
-        Generate a synthetic field based on ``field_info``.
-
-        Different field types produce different value ranges and spatial
-        structures, so the plot styles (colormaps, contour levels) and
-        physical sanity checks both pass.
-
-        Parameters
-        ----------
-        field_info
-            Field descriptor. The mock consults ``field_info.name`` as
-            the primary key; for fields where the name is reused
-            (e.g. ``cape`` is shared by CAPE and CIN), the
-            ``parameter.wgrib2_name`` is used as a tiebreaker.
-            ``level_type`` and ``level`` select boundary-layer vs.
-            pressure-level branches.
-        start_time
-            Forecast start time. Used for seasonality of ``t2m`` and
-            ``mslp``.
-        forecast_time
-            Forecast lead time. Used by accumulated fields (e.g. APCP,
-            ASNOW) so that ``F(t) - F(t - dt)`` is non-zero and the
-            rain plots show meaningful coverage.
-
-        Returns
-        -------
-        xarray.DataArray
-            Two-dimensional array with ``latitude`` and ``longitude``
-            coordinates.
-        """
+        """Build one deterministic field for a stable workflow parameter ID."""
+        field_name = name or _MOCK_PARAMETER_NAMES.get(parameter_id)
+        if field_name is None and parameter_id.startswith("cedarkit.shr-0-"):
+            field_name = "vwsh"
+        if field_name is None:
+            raise ValueError(f"unsupported mock workflow parameter {parameter_id!r}")
         return self._generate_field(
-            field_info,
+            _MockField(parameter_id, field_name, level_type, level),
             start_time=start_time,
-            forecast_time=forecast_time,
+            forecast_time=forecast_time or pd.Timedelta(0),
         )
 
     def _generate_field(
             self,
-            field_info: FieldInfo,
+            mock_field: _MockField,
             start_time: Optional[pd.Timestamp] = None,
             forecast_time: pd.Timedelta = pd.Timedelta(0),
     ) -> xr.DataArray:
@@ -157,7 +154,7 @@ class MockDataSource(DataSource):
         hours = float(forecast_time / pd.Timedelta(hours=1)) if forecast_time is not None else 0.0
         month = start_time.month if start_time is not None else 7
 
-        name = field_info.name
+        name = mock_field.name
         # Use deterministic seed based on field name for reproducibility.
         seed = sum(ord(c) for c in name)
         rng = np.random.default_rng(seed)
@@ -165,18 +162,18 @@ class MockDataSource(DataSource):
         if name == "t2m":
             values = self._t2m(lat2d, lon2d, month=month)
         elif name == "t":
-            values = self._t_pressure(lat2d, lon2d, level=field_info.level)
+            values = self._t_pressure(lat2d, lon2d, level=mock_field.level)
         elif name == "rh2m":
             values = self._rh2m(lat2d, lon2d)
         elif name == "h":
-            values = self._geopotential_height(lat2d, lon2d, level=field_info.level)
+            values = self._geopotential_height(lat2d, lon2d, level=mock_field.level)
         elif name == "mslp":
             values = self._mslp(lat2d, lon2d, month=month)
         elif name in ("u", "v"):
             values = self._wind_component(
                 component=name,
-                level_type=field_info.level_type,
-                level=field_info.level,
+                level_type=mock_field.level_type,
+                level=mock_field.level,
                 lat2d=lat2d,
                 lon2d=lon2d,
             )
@@ -193,11 +190,7 @@ class MockDataSource(DataSource):
         elif name == "cape":
             # Both CAPE and CIN share name="cape"; distinguish by the
             # WGRIB2 name carried in ``Parameter``.
-            wgrib2_name = (
-                field_info.parameter.wgrib2_name
-                if field_info.parameter is not None else None
-            )
-            if wgrib2_name == "CIN":
+            if mock_field.parameter_id == "cedarkit.cin":
                 values = self._cin(lat2d, lon2d)
             else:
                 values = self._cape(lat2d, lon2d)
@@ -206,11 +199,11 @@ class MockDataSource(DataSource):
         elif name == "qv_div":
             values = self._moisture_flux_divergence(lat2d, lon2d)
         elif name == "pte":
-            values = self._pte(lat2d, lon2d, level=field_info.level)
+            values = self._pte(lat2d, lon2d, level=mock_field.level)
         elif name == "vwsh":
             values = self._vertical_wind_shear(lat2d, lon2d)
         elif name == "dpt":
-            values = self._dew_point(lat2d, lon2d, level=field_info.level)
+            values = self._dew_point(lat2d, lon2d, level=mock_field.level)
         else:
             # Generic field
             values = 10.0 * np.sin(np.deg2rad(lat2d * 2)) * np.cos(np.deg2rad(lon2d * 2))
@@ -697,22 +690,3 @@ class MockDataSource(DataSource):
             return float(level)
         except (TypeError, ValueError):
             return default
-
-
-def build_mock_data_loader(resolution: float = 0.25) -> DataLoader:
-    """
-    Convenience helper that returns a :class:`DataLoader` wrapping a
-    :class:`MockDataSource`.
-
-    Parameters
-    ----------
-    resolution
-        Mock grid resolution in degrees.
-
-    Returns
-    -------
-    DataLoader
-        Ready-to-use loader, identical to what production code uses with
-        :class:`~cedar_graph.data.LocalDataSource`.
-    """
-    return DataLoader(data_source=MockDataSource(resolution=resolution))

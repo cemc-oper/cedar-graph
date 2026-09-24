@@ -13,7 +13,6 @@ import cartopy.crs  # Load PROJ before the data provider imports ecCodes.
 import pytest
 from loguru import logger
 
-from cedar_graph.data import DataLoader
 from cedar_graph.testing import MockDataSource
 
 # Use non-interactive backend for CI
@@ -45,12 +44,6 @@ def baseline_dir() -> Path:
 def mock_data_source() -> MockDataSource:
     """Session-scoped mock data source."""
     return MockDataSource()
-
-
-@pytest.fixture(scope="session")
-def mock_data_loader(mock_data_source) -> DataLoader:
-    """Session-scoped data loader with mock source."""
-    return DataLoader(data_source=mock_data_source)
 
 
 @pytest.fixture

@@ -10,7 +10,7 @@ import xarray as xr
 import pandas as pd
 import reki
 
-from cedarkit.plots.workflow.plan.model import BoundFieldRequest, FieldRequest
+from cedarkit.plots.workflow.plan.model import BoundFieldRequest
 
 
 @dataclass(frozen=True)
@@ -68,14 +68,14 @@ class RekiProvider:
         return {"hits": self._cache_hits, "misses": self._cache_misses, "entries": len(self._field_cache)}
 
     @staticmethod
-    def _field_cache_key(query, start_time, forecast_time, required, parameter_id):
+    def _field_cache_key(query, start_time, forecast_time, cardinality, parameter_id):
         query_key = json.dumps({
             "parameter": query.parameter, "level_type": query.level_type,
             "level": query.level, "step_type": query.step_type,
             "time_range": query.time_range, "member": query.member,
             "extra": dict(query.extra),
         }, sort_keys=True, default=str)
-        return (query_key, str(start_time), str(forecast_time), required, parameter_id)
+        return (query_key, str(start_time), str(forecast_time), cardinality, parameter_id)
 
     def _capability(self):
         """Read the source-declared capability without mutating the source."""
@@ -128,57 +128,6 @@ class RekiProvider:
             status=status, duration_seconds=duration, error_code=error_code,
         ))
 
-    def load(self, query: reki.FieldQuery, *, start_time=None,
-             forecast_time=None, required: bool = True, parameter_id: str | None = None):
-        self._ensure_open()
-        if not isinstance(query, reki.FieldQuery):
-            raise TypeError("query must be a reki.FieldQuery")
-        cache_key = self._field_cache_key(query, start_time, forecast_time, required, parameter_id)
-        if cache_key in self._field_cache:
-            self._cache_hits += 1
-            value = self._field_cache[cache_key]
-            return None if value is None else value.copy(deep=False)
-        self._cache_misses += 1
-        capability = self._capability()
-        if capability is not None and capability.direct_result:
-            if parameter_id is None:
-                raise ValueError("a stable parameter_id is required for a direct-result source")
-            request = BoundFieldRequest(
-                node_id="legacy-load",
-                key=FieldRequest(
-                    provider_slot="default", parameter_id=parameter_id,
-                    query=query,
-                    start_time=None if start_time is None else str(start_time),
-                    forecast_time=None if forecast_time is None else str(forecast_time),
-                    cardinality="one" if required else "first",
-                ),
-                origin="legacy FieldInfo adapter",
-            )
-            value = self._fetch_direct(request)
-            self._field_cache[cache_key] = value
-            return value.copy(deep=False)
-        bindings, selected_query = self._selectable_binding(
-            query, start_time=start_time, forecast_time=forecast_time)
-        reader = reki.from_source(self.source_spec, **bindings)
-        selected = reader.sel(selected_query)
-        field = selected.one() if required else selected.one_or_none()
-        value = None if field is None else field.to_xarray()
-        self._field_cache[cache_key] = value
-        return None if value is None else value.copy(deep=False)
-
-    def _load_many(self, queries, *, start_time=None, forecast_time=None,
-                   required=True):
-        """Stage-3 prototype; recipe execution does not call this yet."""
-        if not all(isinstance(query, reki.FieldQuery) for query in queries):
-            raise TypeError("queries must contain FieldQuery objects")
-        bindings = self._bindings(start_time=start_time, forecast_time=forecast_time)
-        reader = reki.from_source(self.source_spec, **bindings)
-        if not reader.capabilities.fetch_many:
-            raise RuntimeError("configured reki reader does not support batch fields")
-        mode = "one" if required else "one_or_none"
-        fields = reader.fetch_many(queries, cardinality=mode)
-        return [None if field is None else field.to_xarray() for field in fields]
-
     # WorkflowPlan provider contract --------------------------------------------
     def fetch(self, request: BoundFieldRequest):
         """Fetch one compiled request using its concrete time binding."""
@@ -187,7 +136,7 @@ class RekiProvider:
         if capability is not None and capability.direct_result:
             start_time, forecast_time = self._request_times(request.key)
             cache_key = self._field_cache_key(request.key.query, start_time, forecast_time,
-                                              request.key.cardinality != "all", request.key.parameter_id)
+                                              request.key.cardinality, request.key.parameter_id)
             if cache_key in self._field_cache:
                 self._cache_hits += 1
                 value = self._field_cache[cache_key]
@@ -203,23 +152,37 @@ class RekiProvider:
         started = perf_counter()
         start_time, forecast_time = self._request_times(request.key)
         cache_key = self._field_cache_key(request.key.query, start_time, forecast_time,
-                                          request.key.cardinality != "all", request.key.parameter_id)
-        cached = cache_key in self._field_cache
+                                          request.key.cardinality, request.key.parameter_id)
+        if cache_key in self._field_cache:
+            self._cache_hits += 1
+            value = self._field_cache[cache_key]
+            self._append_trace(request, status="cached", duration=0)
+            return None if value is None else value.copy(deep=False)
+        self._cache_misses += 1
         try:
-            value = self.load(
-                request.key.query,
-                start_time=start_time,
-                forecast_time=forecast_time,
-                required=request.key.cardinality != "all",
-                parameter_id=request.key.parameter_id,
-            )
+            bindings, selected_query = self._selectable_binding(
+                request.key.query, start_time=start_time, forecast_time=forecast_time)
+            selected = reki.from_source(self.source_spec, **bindings).sel(selected_query)
+            cardinality = request.key.cardinality
+            if cardinality == "one":
+                field = selected.one()
+            elif cardinality == "first":
+                field = selected.first()
+            elif cardinality == "all":
+                # Ensemble plans issue one request per member; this marks an
+                # optional member lookup, not a multi-field result.
+                field = selected.one_or_none()
+            else:
+                raise ValueError(f"unsupported field cardinality {cardinality!r}")
+            value = None if field is None else field.to_xarray()
         except Exception as exc:
             self._append_trace(request, status="error", duration=perf_counter() - started,
                                error_code=getattr(exc, "code", type(exc).__name__))
             raise
-        self._append_trace(request, status="cached" if cached else ("missing" if value is None else "ok"),
+        self._field_cache[cache_key] = value
+        self._append_trace(request, status="missing" if value is None else "ok",
                            duration=perf_counter() - started)
-        return value
+        return None if value is None else value.copy(deep=False)
 
     def _fetch_direct(self, request: BoundFieldRequest):
         """Bind a high-level request before source construction; never select it."""
