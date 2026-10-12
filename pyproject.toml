@@ -31,6 +31,7 @@ dependencies = [
     "xarray",
     "loguru",
     "reki>=2026.9.0",
+    "cedarkit-query>=0.1,<0.2",
     "cedarkit-comp>=2026.7.0",
     "cedarkit-plots>=2026.9.0",
 ]
@@ -87,3 +88,4 @@ markers = [
 cedarkit-plots = { path = "../cedarkit-plots", editable = true }
 cedarkit-comp = { path = "../cedarkit-comp", editable = true }
 reki = { path = "../reki", editable = true }
+cedarkit-query = { path = "../cedarkit-query" }

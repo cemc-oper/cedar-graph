@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 import json
 import re
+from pathlib import Path
 from time import perf_counter
 from typing import Any, Mapping
 
@@ -10,7 +11,7 @@ import xarray as xr
 import pandas as pd
 import reki
 
-from cedarkit.plots.workflow.plan.model import BoundFieldRequest
+from cedarkit.plots.workflow.plan.model import BoundFieldRequest, public_request_from_field_request
 
 
 @dataclass(frozen=True)
@@ -51,12 +52,51 @@ class RekiProvider:
         self._cache_hits = 0
         self._cache_misses = 0
         self._closed = False
+        self._query_snapshot = None
+
+    @classmethod
+    def from_query_catalog(cls, snapshot, dataset: str, *, native_parameters: Mapping[str, str],
+                           member_roles: Mapping[str, str] | None = None,
+                           candidate_paths=(), local_config_version: str | None = None,
+                           local_config_dir: Path | None = None, index_policy: str = "off",
+                           index_dir: Path | None = None, hash_resources: bool = False,
+                           registry_sha256: str | None = None):
+        """Create a public-query provider while keeping legacy SourceSpec callers intact."""
+        from reki.catalog.query_binding import CatalogSnapshot
+        from reki.query_collection import CollectionSession
+
+        if not isinstance(snapshot, CatalogSnapshot):
+            raise TypeError("snapshot must be a CatalogSnapshot")
+        resolved = snapshot.catalog.resolve(dataset)
+        provider = cls(resolved)
+        provider._query_snapshot = snapshot
+        provider._native_parameters = dict(native_parameters)
+        provider._member_roles = None if member_roles is None else dict(member_roles)
+        provider._candidate_paths = tuple(Path(path) for path in candidate_paths)
+        provider._local_config_version = local_config_version
+        provider._local_config_dir = local_config_dir
+        provider._index_policy = index_policy
+        provider._index_dir = index_dir
+        provider._registry_sha256 = registry_sha256
+        provider._hash_resources = hash_resources
+        provider._collection_session = CollectionSession(index_policy=index_policy, index_dir=index_dir,
+                                                          hash_resources=hash_resources)
+        return provider
 
     def close(self) -> None:
         """Release task-owned cached arrays and traces; leave the source alone."""
         self._field_cache.clear()
         self.trace.clear()
+        if self._query_snapshot is not None:
+            self._collection_session.close()
         self._closed = True
+
+    def __enter__(self):
+        self._ensure_open()
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        self.close()
 
     def _ensure_open(self) -> None:
         if self._closed:
@@ -65,6 +105,10 @@ class RekiProvider:
     @property
     def cache_info(self) -> Mapping[str, int]:
         """Counters and entries for this provider's task-local field cache."""
+        if self._query_snapshot is not None:
+            info = self._collection_session.cache_info()
+            return {"hits": info.value_hits, "misses": info.value_misses,
+                    "entries": info.resources}
         return {"hits": self._cache_hits, "misses": self._cache_misses, "entries": len(self._field_cache)}
 
     @staticmethod
@@ -132,6 +176,8 @@ class RekiProvider:
     def fetch(self, request: BoundFieldRequest):
         """Fetch one compiled request using its concrete time binding."""
         self._ensure_open()
+        if self._query_snapshot is not None:
+            return self._fetch_public_many((request,))[0]
         capability = self._capability()
         if capability is not None and capability.direct_result:
             start_time, forecast_time = self._request_times(request.key)
@@ -213,14 +259,121 @@ class RekiProvider:
                            external_parameter=bound.parameter)
         return result
 
+    def _public_plan(self, request: BoundFieldRequest):
+        from reki.catalog.query_binding import plan_source_binding
+
+        key = request.key
+        public = public_request_from_field_request(
+            request, dataset=self.dataset_id,
+            native_parameter=self._native_parameters.get(key.parameter_id),
+            member_roles=self._member_roles)
+        plan = plan_source_binding(public.query, snapshot=self._query_snapshot,
+                                   local_config_version=self._local_config_version)
+        return public, plan
+
+    def _public_candidates(self, plan):
+        if self._candidate_paths:
+            return self._candidate_paths
+        from reki.query_locator import _path
+        return (Path(_path(plan, plan.query.to_dict(), local_config_dir=self._local_config_dir)),)
+
+    def _fetch_public_many(self, requests):
+        from reki.query_collection import CollectionRequest
+        from reki.query_cmadaas import read_frozen_cmadaas
+
+        self._ensure_open()
+        requests = tuple(requests)
+        if not requests:
+            return []
+        started = perf_counter()
+        try:
+            prepared = [self._public_plan(request) for request in requests]
+            if all(plan.binding.kind == "local" for _, plan in prepared):
+                jobs = (CollectionRequest(plan, self._public_candidates(plan), self._native_parameters,
+                                          self._member_roles, public.policy["missing"],
+                                          self._local_config_dir)
+                        for public, plan in prepared)
+                results = self._collection_session.read_many(jobs)
+                values = []
+                for result in results:
+                    if result.data is None:
+                        values.append(None)
+                    elif len(result.fields) != 1:
+                        raise ValueError("workflow read requires one public field")
+                    else:
+                        field = result.fields[0]
+                        value = field.data.copy(deep=True)
+                        value.attrs = dict(value.attrs)
+                        value.attrs["source_reference"] = field.reference.to_dict()
+                        values.append(value)
+            elif all(plan.binding.kind == "cmadaas" for _, plan in prepared):
+                if self._registry_sha256 is None:
+                    raise ValueError("CMADaaS public reads require registry_sha256")
+                values = []
+                for _, plan in prepared:
+                    result = read_frozen_cmadaas(plan, registry_sha256=self._registry_sha256)
+                    value = result.data.rename(plan.query.parameter)
+                    value.attrs = dict(value.attrs)
+                    value.attrs["cmadaas_parameter"] = result.execution.request.parameter
+                    values.append(value)
+            else:
+                raise ValueError("one provider batch cannot mix source kinds")
+        except Exception as exc:
+            for request in requests:
+                self._append_trace(request, status="error", duration=perf_counter() - started,
+                                   error_code=getattr(exc, "code", type(exc).__name__))
+            raise
+        for request, value in zip(requests, values):
+            self._append_trace(request, status="missing" if value is None else "ok",
+                               duration=perf_counter() - started)
+        return values
+
+    def _check_public_many(self, requests):
+        from cedarkit_query import QueryError
+        from reki.query_locator import locate_fields
+
+        statuses = []
+        for request in requests:
+            try:
+                _, plan = self._public_plan(request)
+                if plan.binding.kind == "cmadaas":
+                    from reki.query_cmadaas import plan_frozen_cmadaas
+                    if self._registry_sha256 is None:
+                        statuses.append("invalid")
+                        continue
+                    plan_frozen_cmadaas(plan, registry_sha256=self._registry_sha256)
+                report = locate_fields(plan, native_parameters=self._native_parameters,
+                                       member_roles=self._member_roles,
+                                       local_config_dir=self._local_config_dir,
+                                       index_dir=self._index_dir, index_policy=self._index_policy,
+                                       missing="partial", hash_resources=self._hash_resources,
+                                       candidate_paths=self._candidate_paths or None)
+                if report.status == "unknown":
+                    statuses.append("unknown")
+                elif any(item.verification != "field_confirmed" for item in report.items):
+                    statuses.append("missing")
+                else:
+                    statuses.append("available")
+            except QueryError as exc:
+                statuses.append({"multiple_matches": "multiple", "unsupported": "invalid",
+                                 "invalid_query": "invalid", "unmapped_parameter": "invalid",
+                                 "unknown_parameter": "invalid"}.get(exc.code, "provider_error"))
+            except Exception:
+                statuses.append("provider_error")
+        return statuses
+
     def fetch_many(self, requests):
         """Fetch in order through the same cache and trace path as fetch."""
         requests = tuple(requests)
+        if self._query_snapshot is not None:
+            return self._fetch_public_many(requests)
         return [self.fetch(request) for request in requests]
 
     def check_many(self, requests):
         """Check metadata when supported; direct-result sources are unknown."""
         self._ensure_open()
+        if self._query_snapshot is not None:
+            return self._check_public_many(tuple(requests))
         capability = self._capability()
         if capability is not None and not capability.metadata_only:
             return ["unknown" for _ in requests]
