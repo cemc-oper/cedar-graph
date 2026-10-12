@@ -42,7 +42,13 @@ Recipe 字段及 CLI 选项见底层库的
 
 ## 公共查询接入示例：现有 `cn.t2m` 产品
 
-假设 `snapshot` 是调用方固定版本的 reki `CatalogSnapshot`，目录中的 `grid`
+可先从 cedar-graph 项目根目录运行完整离线示例；脚本创建临时合成 GRIB2、固定目录版本并在退出时清理文件：
+
+```bash
+uv run --offline python docs/examples/public_query_t2m.py
+```
+
+示例源码在 [public_query_t2m.py](../examples/public_query_t2m.py)。若接入已有资料，假设 `snapshot` 是调用方固定版本的 reki `CatalogSnapshot`，目录中的 `grid`
 绑定一个受控 GRIB file-pattern，`path` 是该模式内的单个 2 米温度 GRIB2 文件：
 
 ```python
@@ -68,5 +74,5 @@ with RekiProvider.from_query_catalog(
 单位为 K，工作流已有单位节点将最终产品数据转换为 `degC`。生成临时合成 GRIB2、
 对比直接 reki/CLI/provider 引用、数组与单位，并检查冷/热解码计数的完整示例可从
 项目根目录运行 `uv run --offline pytest tests/mock/test_public_query_provider.py -q`。
-样本不写入 Git，也不声称与业务产品数值相同。未给出的参数映射、成员角色或
+样本不写入 Git，也不声称与业务产品数值相同。当前公共本地查询只支持 GRIB，原始温度字段为 K，workflow 的 `degC` 是产品转换结果。未给出的参数映射、成员角色或
 公共协议尚不支持的条件会明确失败。
