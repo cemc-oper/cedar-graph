@@ -3,6 +3,7 @@
 import pandas as pd
 import reki
 import xarray as xr
+from dataclasses import replace
 
 from cedar_graph.data import RekiProvider
 from cedar_graph.recipes.workflow_product import select_workflow_product
@@ -48,6 +49,32 @@ def test_selectable_provider_uses_v3_query_and_metadata_check(monkeypatch):
         assert [item.status for item in provider.trace] == ["ok", "cached"]
     finally:
         provider.close()
+
+
+def test_legacy_provider_keeps_unbound_time_behavior(monkeypatch):
+    bindings = []
+    field = xr.DataArray([[273.15]], dims=("latitude", "longitude"),
+                         coords={"latitude": [30.0], "longitude": [110.0]}, attrs={"units": "K"})
+
+    class Reader:
+        def sel(self, query):
+            return self
+
+        def one(self):
+            return self
+
+        def to_xarray(self):
+            return field
+
+    monkeypatch.setattr(reki, "from_source", lambda spec, **kwargs: bindings.append(kwargs) or Reader())
+    request = _request()
+    assert request.key.start_time == "2026-07-16T00:00:00Z"
+    request = replace(request, key=replace(request.key, start_time=None, forecast_time=None))
+    with RekiProvider(reki.SourceSpec("local", args=("fixture",))) as provider:
+        assert provider.fetch(request).identical(field)
+        assert provider.trace[0].start_time is None
+        assert provider.trace[0].forecast_time is None
+    assert bindings == [{}]
 
 
 def test_cmadaas_provider_binds_v3_request_and_region_without_select(monkeypatch):
