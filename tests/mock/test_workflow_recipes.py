@@ -22,7 +22,7 @@ CASES = (
     ("rain_wind_10m", {"interval": "3h"}, 4, ("cemc.rain:cn_3h", "cemc.wind:cn")),
     ("rh2m", {}, 1, ("cemc.rh2m:cn",)),
     ("t2m", {}, 1, ("cemc.t2m:cn_summer",)),
-    ("wind_10m", {}, 2, ("cemc.ws_10m:cn", "cemc.wind:cn")),
+    ("wind_10m", {}, 2, ("cemc.ws_10m:cn", "cemc.wind:cn_mps")),
 )
 
 BAR_LABELS = {"h_500_psl": "hPa", "h_500_wind_850": "m/s", "cdbz": "dBZ",
@@ -91,5 +91,5 @@ def test_height_pressure_snow_and_wind_numeric_units():
     wind = select_workflow_product("cn.wind_10m")
     wind_data = wind.compile(context).execute(MockDataSource(resolution=2), registry=wind.discovery.ops)
     np.testing.assert_allclose(wind_data.outputs["ws_10m"],
-                               np.hypot(wind_data.outputs["u_10m"], wind_data.outputs["v_10m"]) * 0.4)
+                               np.hypot(wind_data.outputs["u_10m"], wind_data.outputs["v_10m"]))
     assert wind_data.outputs["ws_10m"].attrs["units"] == "m/s"

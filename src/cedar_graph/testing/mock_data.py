@@ -47,6 +47,8 @@ _MOCK_PARAMETER_NAMES = {
     "cedarkit.rh2m": "rh2m",
     "cedarkit.u": "u",
     "cedarkit.v": "v",
+    "cedarkit.u10m": "u",
+    "cedarkit.v10m": "v",
     "cedarkit.t2m": "t2m",
     "cedarkit.div": "div",
     "cedarkit.qdiv": "qv_div",
@@ -110,6 +112,7 @@ class MockDataSource:
             units = {"bli": "K", "cape": "J/kg", "cdbz": "dBZ", "cin": "J/kg",
                      "h": "gpm", "psl": "Pa", "kidx": "K", "rain": "mm",
                      "sf": "m", "rh2m": "%", "u": "m/s", "v": "m/s",
+                     "u10m": "m/s", "v10m": "m/s",
                      "t2m": "K", "div": "s^-1", "qdiv": "g/(hPa cm^2 s)",
                      "theta-se": "K", "shr": "m/s", "t": "K", "td": "K"}.get(parameter_name)
             if parameter_name == "qdiv":
@@ -377,7 +380,7 @@ class MockDataSource:
           have a broader, faster jet without the SW tongue.
         """
         is_surface = (
-            level_type in ("heightAboveGround", 103, "103")
+            level_type in ("height_above_ground", "heightAboveGround", 103, "103")
             or (level_type is None and level == 10)
         )
 
