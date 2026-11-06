@@ -31,7 +31,7 @@ dependencies = [
     "xarray",
     "loguru",
     "reki>=2026.9.0",
-    "cedarkit-query>=0.1,<0.2",
+    "cedarkit-query>=0.2.1,<0.3",
     "cedarkit-comp>=2026.7.0",
     "cedarkit-plots>=2026.9.0",
 ]

@@ -35,7 +35,9 @@ def test_member_count_max_identity_and_shared_colorbar(member_count):
     assert prepared.realized_control_id == "ctl"
     assert prepared.max_input_ids == member_ids
     assert prepared.provider_requests == len(provider.workflow_requests) == member_count + 1
-    assert {request.key.query.member for request in provider.workflow_requests} == {*member_ids, "ctl"}
+    queries = [request.key.query.to_dict() for request in provider.workflow_requests]
+    assert {query["member"] for query in queries if "member" in query} == set(range(member_count))
+    assert sum(query.get("member_role") == "control" for query in queries) == 1
     np.testing.assert_allclose(prepared.max_field.values,
                                np.maximum.reduce([prepared.fields[member].values for member in member_ids]))
     panel = prepared.render(basemap=_basemap())
@@ -79,7 +81,7 @@ def test_control_is_optional_and_max_can_include_it_explicitly():
         def fetch_many(self, requests):
             fields = super().fetch_many(requests)
             for index, (request, field) in enumerate(zip(requests, fields)):
-                if request.key.query.member == "ctl":
+                if request.key.query.to_dict().get("member_role") == "control":
                     attrs = dict(field.attrs)
                     fields[index] = field + 20
                     fields[index].attrs = attrs
@@ -102,13 +104,14 @@ def test_control_is_optional_and_max_can_include_it_explicitly():
         panel.close()
 
 
-def test_grib_member_number_is_preserved_on_members_and_ignored_for_max_grid():
+@pytest.mark.parametrize("coordinate", ("number", "member"))
+def test_grib_member_number_is_preserved_on_members_and_ignored_for_max_grid(coordinate):
     class NumberedSource(MockDataSource):
         def fetch_many(self, requests):
             fields = super().fetch_many(requests)
             numbered = []
             for request, field in zip(requests, fields):
-                field = field.assign_coords(number=int(request.key.query.member[1:]))
+                field = field.assign_coords({coordinate: request.key.query.member})
                 field.attrs.pop("standard_name", None)
                 numbered.append(field)
             return numbered
@@ -116,9 +119,9 @@ def test_grib_member_number_is_preserved_on_members_and_ignored_for_max_grid():
     request = EnsembleRequest(("m001", "m002"), control_id="m000",
                               include_control_in_max=True)
     prepared, _ = _prepare(request, NumberedSource(resolution=5))
-    assert [prepared.fields[member].coords["number"].item()
+    assert [prepared.fields[member].coords[coordinate].item()
             for member in ("m000", "m001", "m002")] == [0, 1, 2]
-    assert "number" not in prepared.max_field.coords
+    assert coordinate not in prepared.max_field.coords
     assert all(field.attrs["standard_name"] == "air_temperature"
                for field in (*prepared.fields.values(), prepared.max_field))
     np.testing.assert_allclose(prepared.max_field.values,
@@ -135,7 +138,7 @@ def test_missing_members_are_recorded_or_rejected_by_policy():
     class MissingSource(MockDataSource):
         def fetch_many(self, requests):
             values = super().fetch_many(requests)
-            return [None if request.key.query.member == "m02" else value
+            return [None if request.key.query.to_dict().get("member") == 2 else value
                     for request, value in zip(requests, values)]
 
     request = EnsembleRequest(("m01", "m02", "m03"), control_id="ctl", missing_policy="skip")

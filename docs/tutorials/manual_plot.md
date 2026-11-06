@@ -25,7 +25,7 @@ finally:
     panel.close()
 ```
 
-生产环境可向 `product.run` 传入由 reki `SourceSpec` 构造的
+生产环境可向 `product.run` 传入由 reki source 声明（例如 `{"kind": "file", "path": path, "dataset": "cma_gfs_gmf"}`）构造的
 {class}`cedar_graph.data.RekiProvider`。调用方负责关闭自行创建的 provider。
 同一个选择与执行接口也适用于 `cn.shr.default` 等迁移后的诊断产品；
 参数通过 `CompileContext(params=...)` 传入。

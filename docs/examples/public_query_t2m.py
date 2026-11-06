@@ -3,20 +3,22 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import cartopy.crs  # Load PROJ before ecCodes in the combined plotting process.
 import eccodes
 
 from cedar_graph.data import RekiProvider
 from cedar_graph.recipes.workflow_product import select_workflow_product
 from cedarkit.plots.workflow.plan import CompileContext
-from reki.catalog import load_catalog
-from reki.catalog.query_binding import CatalogSnapshot
 
 
 def write_sample(path: Path) -> None:
     message = eccodes.codes_grib_new_from_samples("regular_ll_pl_grib2")
     try:
         for key, value in (
-            ("shortName", "2t"), ("dataDate", 20260830), ("dataTime", 0),
+            ("centre", 38), ("subCentre", 0), ("tablesVersion", 4),
+            ("localTablesVersion", 0), ("productionStatusOfProcessedData", 0),
+            ("discipline", 0), ("parameterCategory", 0), ("parameterNumber", 0),
+            ("significanceOfReferenceTime", 1), ("dataDate", 20260830), ("dataTime", 0),
             ("forecastTime", 24), ("typeOfLevel", "heightAboveGround"), ("level", 2),
             ("Ni", 4), ("Nj", 3), ("latitudeOfFirstGridPointInDegrees", 50),
             ("latitudeOfLastGridPointInDegrees", 48), ("longitudeOfFirstGridPointInDegrees", 100),
@@ -35,20 +37,13 @@ def main() -> None:
         root = Path(directory)
         path = root / "t2m.grib2"
         write_sample(path)
-        catalog = load_catalog(builtin=False, plugins=False, user=False, explicit={
-            "api_version": "reki.catalog/v1", "datasets": [{"id": "grid", "source": {
-                "name": "file-pattern", "args": [str(root), "t2m.grib2"]}}],
-        })
-        snapshot = CatalogSnapshot(catalog, "t17-local")
+        source = {"kind": "file", "path": str(path), "dataset": "cma_gfs_gmf"}
         product = select_workflow_product("cn.t2m")
         plan = product.compile(CompileContext(
             start_time="2026-08-30T00:00:00Z", forecast_time="24h",
             params={"style_variant": "cn_summer"},
         ))
-        with RekiProvider.from_query_catalog(
-            snapshot, "grid", native_parameters={"cedarkit.t2m": "2t"},
-            candidate_paths=[path], index_policy="off",
-        ) as provider:
+        with RekiProvider(source) as provider:
             availability = plan.check_available(provider)
             assert availability.executable
             result = plan.execute(provider, registry=product.discovery.ops)

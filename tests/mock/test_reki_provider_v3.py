@@ -2,6 +2,8 @@
 
 import pandas as pd
 import reki
+import pytest
+from cedarkit_query import Query, QueryError
 import xarray as xr
 from dataclasses import replace
 
@@ -44,11 +46,13 @@ def test_selectable_provider_uses_v3_query_and_metadata_check(monkeypatch):
         assert provider.check_many((request,)) == ["available"]
         values = provider.fetch_many((request, request))
         assert len(values) == 2 and values[0].identical(values[1])
-        assert calls[0] == request.key.query
+        assert calls[0].parameter == request.key.parameter_id
+        assert isinstance(calls[0], reki.FieldQuery)
         assert provider.cache_info == {"hits": 1, "misses": 1, "entries": 1}
         assert [item.status for item in provider.trace] == ["ok", "cached"]
     finally:
         provider.close()
+    assert provider.trace == []
 
 
 def test_legacy_provider_keeps_unbound_time_behavior(monkeypatch):
@@ -77,37 +81,16 @@ def test_legacy_provider_keeps_unbound_time_behavior(monkeypatch):
     assert bindings == [{}]
 
 
-def test_cmadaas_provider_binds_v3_request_and_region_without_select(monkeypatch):
-    dataset = reki.load_catalog(plugins=False, user=False).resolve("CMA-GFS-CMADaaS")
-    field = xr.DataArray([[273.15]], dims=("latitude", "longitude"),
-                         coords={"latitude": [30.0], "longitude": [110.0]}, attrs={"units": "K"})
-    calls = []
-
-    class DirectReader:
-        def sel(self, query):
-            raise AssertionError("direct-result source must not select a field")
-
-        def to_xarray(self):
-            return field
-
-    monkeypatch.setattr(reki, "from_source", lambda spec, **kwargs: calls.append(kwargs) or DirectReader())
-    region = {"type": "rect", "min_latitude": 20.0}
-    provider = RekiProvider(dataset, region=region)
-    try:
-        request = _request("first")
-        assert provider.check_many((request,)) == ["unknown"]
-        result = provider.fetch(request)
-        assert result.name == "cedarkit.t2m"
-        assert result.attrs["cmadaas_parameter"] == "TEM"
-        assert calls[0]["region"] == region
-        assert calls[0]["start_time"] == pd.Timestamp("2026-07-16", tz="UTC")
-        assert calls[0]["forecast_time"] == pd.Timedelta("24h")
-        assert provider.trace[0].node_id == "first"
-        assert provider.trace[0].dataset_id == dataset.record.dataset_id
-        assert provider.trace[0].catalog_origin == dataset.origin
-        assert provider.trace[0].external_parameter == "TEM"
-    finally:
-        provider.close()
+def test_removed_legacy_cmadaas_binding_requires_current_source_declaration(monkeypatch):
+    """Removed reki bind APIs are not recreated as a second query protocol."""
+    from types import SimpleNamespace
+    provider = RekiProvider(reki.SourceSpec("cmadaas", kwargs={"kind": "model_grid"}))
+    monkeypatch.setattr(provider, "_capability", lambda: SimpleNamespace(direct_result=True))
+    with provider:
+        with pytest.raises(QueryError, match="public source declaration") as caught:
+            provider.fetch(_request())
+        assert caught.value.code == "unsupported"
+        assert provider.trace[-1].error_code == "unsupported"
 
 
 def test_mounted_ensemble_member_binds_file_number_and_grib_member(monkeypatch):
@@ -131,12 +114,12 @@ def test_mounted_ensemble_member_binds_file_number_and_grib_member(monkeypatch):
     try:
         from dataclasses import replace
         request = _request()
-        query = replace(request.key.query, member="m003")
+        query = Query({**request.key.query.to_dict(), "member": 3})
         request = replace(request, key=replace(request.key, query=query))
         result = provider.fetch(request)
         assert result.identical(field)
         assert calls[0][1]["number"] == 3
         assert calls[1][1].member == 3
-        assert request.key.query.member == "m003"
+        assert request.key.query.member == 3
     finally:
         provider.close()

@@ -102,8 +102,8 @@ def test_qdiv_shearing_and_dewpoint_units():
         shear_expected = smth9(shear_expected, 0.5, -0.25, False)
     np.testing.assert_allclose(shear_result.outputs["shr"].values, shear_expected)
     assert shear_result.outputs["shr"].attrs["units"] == "m/s"
-    assert shear_source.workflow_requests[0].key.query.level == 3000
-    assert shear_source.workflow_requests[0].key.query.extra["scaledValueOfSecondFixedSurface"] == 0
+    assert shear_source.workflow_requests[0].key.query.layer["top"]["value"] == 3000
+    assert shear_source.workflow_requests[0].key.query.layer["bottom"]["value"] == 0
 
     dew = select_workflow_product("cn.t_dew_t.default")
     dew_source = MockDataSource(resolution=2)

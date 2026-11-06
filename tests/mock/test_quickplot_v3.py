@@ -75,3 +75,31 @@ def test_show_plot_closes_its_provider_after_plot_failure(monkeypatch):
         show_plot("cn.t2m", {"system_name": "CMA-GFS", "start_time": "2026-07-16",
                              "forecast_time": "24h"}, {"source_spec": reki.SourceSpec("local")})
     assert events == ["provider closed"]
+
+
+def test_show_plot_builds_current_local_source_without_catalog_resolve(monkeypatch):
+    seen = []
+
+    class Provider:
+        def __init__(self, source):
+            seen.append(source)
+
+        def close(self):
+            seen.append("closed")
+
+    class Panel:
+        def show(self):
+            pass
+
+        def close(self):
+            pass
+
+    def run(self, provider, context):
+        assert context.params["model"] == "CMA-GFS"
+        return Panel()
+
+    monkeypatch.setattr("cedar_graph.quickplot.RekiProvider", Provider)
+    monkeypatch.setattr(WorkflowProduct, "run", run)
+    show_plot("cn.t2m", {"system_name": "CMA-GFS", "start_time": "2026-07-16",
+                         "forecast_time": "24h"}, {"storage_base": "/mounted", "data_class": "od"})
+    assert seen == [{"kind": "local", "dataset": "CMA-GFS", "root": "/mounted"}, "closed"]

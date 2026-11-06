@@ -24,7 +24,9 @@ def test_t2m_product_selects_seasonal_style_and_converts_once():
     assert len(summer.content.charts[0].plots) == 1
     assert summer.content.charts[0].plots[0].targets == "all"
     assert summer.content.colorbars[0].label == "°C"
-    assert summer.content.charts[0].titles[0].text == "2m Temperature (°C)"
+    assert summer.content.charts[0].titles[0].text == (
+        "2m Temperature (°C)\n"
+        "CMA-GFS | Init 2024070100 UTC | Valid 2024070200 UTC | +024h")
 
     provider = MockDataSource(resolution=2)
     result = summer.execute(provider, registry=product.discovery.ops)

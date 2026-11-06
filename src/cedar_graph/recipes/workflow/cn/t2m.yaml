@@ -5,6 +5,9 @@ metadata:
   title: 2m Temperature (C)
 spec:
   params:
+    model:
+      type: str
+      default: CMA-GFS
     style_variant:
       type: enum
       default: cn_summer
@@ -30,7 +33,9 @@ spec:
         data_crs: plate_carree
       titles:
       - id: heading
-        text: 2m Temperature (°C)
+        text: |-
+          2m Temperature (°C)
+          {params.model} | Init {context.start_time_label} | Valid {context.valid_time_label} | +{context.forecast_hour}h
     colorbars:
     - id: temperature
       plots:
@@ -39,3 +44,9 @@ spec:
       label: °C
   display:
     template: east_asia
+    charts:
+      main:
+        decorations:
+          titles:
+            heading:
+              fontsize: 9

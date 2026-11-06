@@ -42,14 +42,16 @@ Recipe 字段及 CLI 选项见底层库的
 
 ## 公共查询接入示例：现有 `cn.t2m` 产品
 
-可先从 cedar-graph 项目根目录运行完整离线示例；脚本创建临时合成 GRIB2、固定目录版本并在退出时清理文件：
+可先从 cedar-graph 项目根目录运行完整离线示例；脚本创建临时合成 GRIB2，在退出时清理文件：
 
 ```bash
 uv run --offline python docs/examples/public_query_t2m.py
 ```
 
-示例源码在 [public_query_t2m.py](../examples/public_query_t2m.py)。若接入已有资料，假设 `snapshot` 是调用方固定版本的 reki `CatalogSnapshot`，目录中的 `grid`
-绑定一个受控 GRIB file-pattern，`path` 是该模式内的单个 2 米温度 GRIB2 文件：
+示例源码在 [public_query_t2m.py](../examples/public_query_t2m.py)。已有文件可直接用
+`file` source 声明路径；文件位置无需登记到目录。`dataset` 在这里选择 CMA-GFS 的
+业务参数和原生字段映射，提供其他映射时可以显式传入 `context`。reki 本身也支持
+不带 dataset、通过 `native` 条件查询任意 GRIB 文件。
 
 ```python
 from cedar_graph.data import RekiProvider
@@ -58,21 +60,38 @@ from cedarkit.plots.workflow.plan import CompileContext
 
 product = select_workflow_product("cn.t2m")
 context = CompileContext(start_time="2026-08-30T00:00:00Z", forecast_time="24h",
-                         params={"style_variant": "cn_summer"})
+                         params={"style_variant": "cn_summer", "model": "CMA-GFS"})
 plan = product.compile(context)
-with RekiProvider.from_query_catalog(
-    snapshot, "grid", native_parameters={"cedarkit.t2m": "2t"},
-    candidate_paths=[path], index_policy="off",
-) as provider:
+source = {"kind": "file", "path": str(path), "dataset": "cma_gfs_gmf"}
+with RekiProvider(source) as provider:
     availability = plan.check_available(provider)
     assert availability.executable
     result = plan.execute(provider, registry=product.discovery.ops)
     temperature_c = result.outputs["temperature"]
+    reports = provider.query_reports
+    trace = provider.trace
 ```
 
-编译计划保留产品节点身份；公共 Query 只描述数据字段。provider 读取的原生字段
-单位为 K，工作流已有单位节点将最终产品数据转换为 `degC`。生成临时合成 GRIB2、
-对比直接 reki/CLI/provider 引用、数组与单位，并检查冷/热解码计数的完整示例可从
-项目根目录运行 `uv run --offline pytest tests/mock/test_public_query_provider.py -q`。
-样本不写入 Git，也不声称与业务产品数值相同。当前公共本地查询只支持 GRIB，原始温度字段为 K，workflow 的 `degC` 是产品转换结果。未给出的参数映射、成员角色或
-公共协议尚不支持的条件会明确失败。
+provider 使用当前公共接口 `from_source(source, context=...) → sel(queries) → one() →
+to_xarray()`。reki 返回 Dataset；绘图适配层只移除已知且长度为一的 time、step、member
+和垂直维度，保留对应标量坐标以及完整空间维度。多个变量或非单值业务维度会显式报错。
+字段身份、原生单位和起报/有效时间随 DataArray 传递，已有单位节点将 K 转为 `degC`。
+图面显示模式、起报时间、有效时间和预报时效；`params.model` 控制模式文字。
+
+`provider.trace` 每条记录包含节点、状态、结构化错误码、`query_report`、实际
+`field_identity` 和 `source_reference`，可以用 `dataclasses.asdict()` 写入运行清单。
+DataArray 的 `cedarkit_query_report`、`field_identity` 和 `source_reference` 属性为 JSON
+字符串。关闭 provider 会释放自身 QuerySource 和缓存，保留报告快照；外部注入的
+CMADaaS client 由调用方关闭。直接 service source 的预检查只做 explain，结果为
+`unknown`；文件预检查扫描字段头而不解码数值。没有对 region 做隐式裁剪。
+
+从项目根目录运行 `uv run --offline pytest tests/mock/test_public_query_provider.py -q`
+可核对直接 reki Dataset 与 provider 的字段引用、全数组、单位、时间、零预检查解码和
+缓存隔离。样本不写入 Git，也不声称与业务产品数值相同。历史 T15 的 CLI 一致性
+验收义务仍保留；当前 reki CLI 尚未接入本公共 Request 入口，因此这部分须在 CLI
+迁移时重开，不能由绘图测试替代。
+
+旧 `SourceSpec` 的可选择读取仍保留在兼容边界；`from_query_catalog` 所依赖的
+CatalogSnapshot/CollectionSession 旧 API 已移除，调用方应迁移到上述 source mapping。
+旧 CMADaaS 高层绑定 API 也已移除，该路径会给出 `unsupported`，请使用当前公共
+CMADaaS source 声明。未支持的条件会明确失败，不回退到默认字段。

@@ -1,6 +1,7 @@
 """Display a selected v3 Cedar Graph product from a reki provider."""
 
 from typing import Any, Optional
+from dataclasses import replace
 
 import pandas as pd
 import reki
@@ -81,13 +82,20 @@ def show_plot(plot_type: str, plot_settings: dict, data_source_config: dict):
     provider = source_config.pop("provider", None)
     owned = provider is None
     if owned:
-        source_spec = source_config.pop("source_spec", None)
+        source_spec = source_config.pop("source", None)
         if source_spec is None:
-            dataset = reki.load_catalog(plugins=False, user=True).resolve(metadata.system_name)
-            source_spec = reki.SourceSpec(dataset.source.name, dataset.source.args,
-                {**dataset.source.kwargs, **{key: value for key, value in source_config.items()
-                   if value is not None}})
-        provider = RekiProvider(source_spec)
+            source_spec = source_config.pop("source_spec", None)
+        source_context = source_config.pop("context", None)
+        if source_spec is None:
+            data_class = source_config.pop("data_class", "od")
+            if data_class != "od":
+                raise ValueError("non-default data_class requires an explicit public source declaration")
+            source_spec = {"kind": "local", "dataset": metadata.system_name,
+                           "root": source_config.pop("storage_base", None) or "/CMADAAS"}
+            if source_config:
+                raise ValueError(f"unknown source options {sorted(source_config)}; use a public source declaration")
+        provider = (RekiProvider(source_spec) if source_context is None else
+                    RekiProvider(source_spec, context=source_context))
     try:
         if isinstance(product, EnsembleT2MProduct):
             prepared = product.prepare(provider, start_time=metadata.start_time,
@@ -96,9 +104,11 @@ def show_plot(plot_type: str, plot_settings: dict, data_source_config: dict):
             panel = prepared.render()
         else:
             context = metadata.compile_context()
-            if plot_type == "cn.t2m" and "style_variant" not in context.params:
-                context = type(context)(start_time=context.start_time, forecast_time=context.forecast_time,
-                    params={**context.params, "style_variant": "cn_summer" if 5 <= metadata.start_time.month <= 9 else "cn_winter"})
+            if plot_type == "cn.t2m":
+                params = dict(context.params)
+                params.setdefault("model", metadata.system_name)
+                params.setdefault("style_variant", "cn_summer" if 5 <= metadata.start_time.month <= 9 else "cn_winter")
+                context = replace(context, params=params)
             panel = product.run(provider, context)
         try:
             panel.show()

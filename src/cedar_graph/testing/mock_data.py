@@ -91,24 +91,27 @@ class MockDataSource:
 
     def fetch_many(self, requests):
         """Serve v3 workflow requests with deterministic synthetic fields."""
-        from reki import resolve_parameter
-
         result = []
         for request in requests:
             self.workflow_requests.append(request)
             key = request.key
             parameter_name = key.parameter_id.removeprefix("cedarkit.")
+            query = key.query.to_dict()
             field = self.field(
                 key.parameter_id,
-                level_type=key.query.level_type or key.query.extra.get("first_level_type"),
-                level=key.query.level or key.query.extra.get("first_level"),
+                level_type=query.get("level_type"),
+                level=query.get("level", query.get("layer", {}).get("bottom", {}).get("value")),
                 start_time=pd.Timestamp(key.start_time) if key.start_time is not None else None,
                 forecast_time=pd.Timedelta(key.forecast_time) if key.forecast_time is not None else None,
             )
-            if key.parameter_id == "cedarkit.t2m" and key.query.member is not None:
-                offset = (sum(ord(char) for char in str(key.query.member)) % 9) - 4
+            if key.parameter_id == "cedarkit.t2m" and query.get("member") is not None:
+                offset = (sum(ord(char) for char in str(query["member"])) % 9) - 4
                 field = field + float(offset)
-            units = resolve_parameter(key.parameter_id).record.unit
+            units = {"bli": "K", "cape": "J/kg", "cdbz": "dBZ", "cin": "J/kg",
+                     "h": "gpm", "psl": "Pa", "kidx": "K", "rain": "mm",
+                     "sf": "m", "rh2m": "%", "u": "m/s", "v": "m/s",
+                     "t2m": "K", "div": "s^-1", "qdiv": "g/(hPa cm^2 s)",
+                     "theta-se": "K", "shr": "m/s", "t": "K", "td": "K"}.get(parameter_name)
             if parameter_name == "qdiv":
                 units = "g/(hPa cm^2 s)"
             elif parameter_name == "shr" or parameter_name.startswith("shr-0-"):

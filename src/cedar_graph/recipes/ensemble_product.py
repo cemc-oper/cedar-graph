@@ -181,9 +181,10 @@ class EnsembleT2MProduct:
         if request.max_enabled:
             # GRIB carries the member number as a scalar coordinate.  It is
             # identity metadata, not part of the spatial grid for MAX.
-            inputs = [field.reset_coords("number", drop=True)
-                      if "number" in field.coords and field.coords["number"].ndim == 0 else field
-                      for field in (fields[member_id] for member_id in max_inputs)]
+            inputs = [field.reset_coords(
+                [name for name in ("number", "member", "member_role")
+                 if name in field.coords and field.coords[name].ndim == 0], drop=True)
+                for field in (fields[member_id] for member_id in max_inputs)]
             first = inputs[0]
             if any(field.dims != first.dims or not field.coords.equals(first.coords) or
                    field.attrs.get("units") != first.attrs.get("units") for field in inputs[1:]):
