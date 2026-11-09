@@ -6,6 +6,7 @@ metadata:
 spec:
   params:
     member_id: {type: str, required: true}
+    member_role: {type: enum, default: perturbation, values: [control, perturbation]}
     style_variant:
       type: enum
       default: cn_summer
@@ -14,7 +15,7 @@ spec:
     temperature:
       field:
         parameter: cedarkit.t2m
-        level: {member: '{params.member_id}'}
+        level: {member: '{params.member_id}', member_role: '{params.member_role}'}
       source_units: K
       units: degC
       temperature_kind: absolute
