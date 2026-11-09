@@ -27,6 +27,7 @@ be **physically plausible** at first glance:
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -43,6 +44,7 @@ _MOCK_PARAMETER_NAMES = {
     "cedarkit.psl": "mslp",
     "cedarkit.kidx": "k",
     "cedarkit.rain": "apcp",
+    "cedarkit.rain.since-initialization": "apcp",
     "cedarkit.sf": "asnow",
     "cedarkit.rh2m": "rh2m",
     "cedarkit.u": "u",
@@ -122,6 +124,19 @@ class MockDataSource:
             field.attrs = {**field.attrs, "units": units}
             if key.parameter_id == "cedarkit.t2m":
                 field.attrs["standard_name"] = "air_temperature"
+            if key.parameter_id == "cedarkit.rain.since-initialization":
+                origin = pd.Timestamp(key.start_time)
+                step = pd.Timedelta(key.forecast_time)
+                if step == pd.Timedelta(0):
+                    field = field * 0
+                identity = {"parameter": key.parameter_id, "time": origin.isoformat(),
+                            "step": step.isoformat(), "valid_time": (origin + step).isoformat(),
+                            "level_type": "surface"}
+                field.attrs.update(units="mm", field_identity=json.dumps(identity),
+                    statistical_interval=json.dumps({"start": origin.isoformat(), "end": (origin + step).isoformat()}),
+                    value_encoding=json.dumps({"quantization_error": 0.0, "unit": "mm"}),
+                    source_reference=json.dumps({"kind": "synthetic"}),
+                    cedarkit_query_report=json.dumps({"synthetic": True}))
             result.append(field)
         return result
 

@@ -2,9 +2,12 @@ api_version: cedarkit.plots/v3
 kind: PlotRecipe
 metadata:
   name: cn.rain_24h
-  title: 'surface cumulated precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
+  title: '24-hour total precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
 spec:
   params:
+    model:
+      type: str
+      default: CMA-GFS
     interval:
       type: enum
       default: 24h
@@ -13,11 +16,12 @@ spec:
   data:
     rain:
       field:
-        parameter: cedarkit.rain
+        parameter: cedarkit.rain.since-initialization
       transforms:
       - args:
         - '{params.interval}'
-        kwargs: {}
+        kwargs:
+          since_initialization: true
         op: time_diff
         repeat: 1
       units: mm
@@ -34,7 +38,9 @@ spec:
         data_crs: plate_carree
       titles:
       - id: heading
-        text: 'surface cumulated precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h'
+        text: |-
+          24-hour total precipitation: {context.previous_forecast_hour}-{context.forecast_hour}h (mm)
+          {params.model} | Init {context.start_time_label} | Valid {context.valid_time_label}
     colorbars:
     - id: fields
       plots:
@@ -43,3 +49,9 @@ spec:
       label: mm
   display:
     template: east_asia
+    charts:
+      main:
+        decorations:
+          titles:
+            heading:
+              fontsize: 9

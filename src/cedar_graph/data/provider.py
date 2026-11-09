@@ -272,7 +272,7 @@ class RekiProvider:
         return self._query_source.sel(public.queries)
 
     @staticmethod
-    def _plot_array(dataset, *, parameter_id, report, identity, reference):
+    def _plot_array(dataset, *, parameter_id, report, identity, reference, metadata=None):
         """Select one variable and collapse only singleton business axes.
 
         Spatial axes, including one-point grids, remain intact. Scalar identity
@@ -293,6 +293,9 @@ class RekiProvider:
                        "cedarkit_query_report": json.dumps(report, sort_keys=True),
                        "field_identity": json.dumps(identity, sort_keys=True),
                        "source_reference": json.dumps(reference, sort_keys=True)}
+        for key in ("statistical_interval", "value_encoding"):
+            if metadata is not None and key in metadata:
+                value.attrs[key] = json.dumps(dict(metadata[key]), sort_keys=True)
         return value
 
     def _fetch_public(self, request):
@@ -335,7 +338,8 @@ class RekiProvider:
                 reference = json.loads(json.dumps(dict(field.metadata.get("source", {}))))
                 evidence.update(field_identity=identity, source_reference=reference)
                 value = self._plot_array(field.to_xarray(), parameter_id=key.parameter_id,
-                                         report=report, identity=identity, reference=reference)
+                                         report=report, identity=identity, reference=reference,
+                                         metadata=field.metadata)
         except Exception as exc:
             failed_report = getattr(exc, "report", None)
             if failed_report is not None:
