@@ -10,7 +10,7 @@ cedar-graph 选择版本化 workflow 产品，将其编译为字段请求，经 
 
 ## 产品与 provider
 
-内置产品使用 v3 workflow recipe 和注册算子。`RekiProvider` 将 `reki.SourceSpec`
+内置产品使用 v3 workflow recipe 和注册算子。`RekiProvider` 将公开 source mapping 与公共 `Request`
 适配为 workflow 字段读取接口；`MockDataSource` 实现相同协议并生成固定合成字段，
 因此产品不需要挂载业务数据也能运行。
 

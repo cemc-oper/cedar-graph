@@ -1,8 +1,7 @@
 """Thin bridge binding cedar-graph field requirements to reki sources."""
 from __future__ import annotations
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import json
-import re
 from time import perf_counter
 from typing import Any, Mapping
 
@@ -38,10 +37,9 @@ class ProviderTrace:
 class RekiProvider:
     """Own a public reki source and adapt single fields for plotting.
 
-    Mapping declarations use reki's current Query/Dataset interface. SourceSpec
-    remains accepted at the legacy reader boundary for existing integrations.
+    Source declarations use the public v1 Query/Dataset interface.
     """
-    def __init__(self, source_spec: Mapping[str, Any] | reki.SourceSpec | Any, *,
+    def __init__(self, source_spec: Mapping[str, Any], *,
                  context: Mapping[str, Any] | str | None = None, client=None,
                  region: Mapping[str, Any] | None = None):
         """Create a task-owned source; an injected service client stays caller-owned."""
@@ -49,16 +47,11 @@ class RekiProvider:
         self.catalog_origin = None
         self._query_source = None
         self._context = context
-        if hasattr(source_spec, "source") and hasattr(source_spec, "record"):
-            self.dataset_id = source_spec.record.dataset_id
-            self.catalog_origin = source_spec.origin
-            source_spec = source_spec.source
-        if isinstance(source_spec, Mapping):
-            self._query_source = reki.from_source(source_spec, context=context, client=client)
-            source_spec = dict(source_spec)
-            self.dataset_id = source_spec.get("dataset")
-        elif not isinstance(source_spec, reki.SourceSpec):
-            raise TypeError("source must be a declaration mapping or reki.SourceSpec")
+        if not isinstance(source_spec, Mapping):
+            raise QueryError("invalid_config", "/source", "A public source declaration mapping is required")
+        self._query_source = reki.from_source(source_spec, context=context, client=client)
+        source_spec = dict(source_spec)
+        self.dataset_id = source_spec.get("dataset")
         self.source_spec = source_spec
         self.region = None if region is None else dict(region)
         self.trace: list[ProviderTrace] = []
@@ -75,12 +68,7 @@ class RekiProvider:
             return
         self._field_cache.clear()
         self._evidence_cache.clear()
-        if self._query_source is not None:
-            self._query_source.close()
-        else:
-            # Existing SourceSpec users rely on close clearing the task trace.
-            self.trace.clear()
-            self.query_reports.clear()
+        self._query_source.close()
         self._closed = True
 
     def __enter__(self):
@@ -104,44 +92,6 @@ class RekiProvider:
         query_key = json.dumps(query.to_dict(), sort_keys=True, default=str)
         return (query_key, str(start_time), str(forecast_time), cardinality, parameter_id)
 
-    def _capability(self):
-        """Read the source-declared capability without mutating the source."""
-        return reki.source_capability(self.source_spec)
-
-    @staticmethod
-    def _bindings(*, start_time=None, forecast_time=None):
-        return {key: value for key, value in {
-            "start_time": start_time, "forecast_time": forecast_time,
-        }.items() if value is not None}
-
-    def _selectable_binding(self, query, *, start_time=None, forecast_time=None):
-        """Bind a mounted ensemble member to both its file and GRIB field."""
-        query = self._legacy_query(query)
-        bindings = self._bindings(start_time=start_time, forecast_time=forecast_time)
-        if self.source_spec.name != "local" or query.member is None:
-            return bindings, query
-        member = query.member
-        if isinstance(member, bool) or not (isinstance(member, int) and member >= 0
-                                             or isinstance(member, str) and re.fullmatch(r"m?\d+", member)):
-            raise ValueError(f"local ensemble member must be a non-negative number or mNNN ID: {member!r}")
-        number = int(member.lstrip("m")) if isinstance(member, str) else member
-        bindings["number"] = number
-        return bindings, replace(query, member=number)
-
-    @staticmethod
-    def _legacy_query(query):
-        """Translate only at the old SourceSpec boundary, never into public reki."""
-        values = query.to_dict()
-        kinds = {"pressure": "isobaricInhPa", "height_above_ground": "heightAboveGround"}
-        extra = dict(values.get("native", {}).get("grib", {}))
-        if "member_role" in values:
-            raise QueryError("unsupported", "/member_role", "legacy readers require a numeric member")
-        return reki.FieldQuery(
-            parameter=values.get("parameter"),
-            level_type=kinds.get(values.get("level_type"), values.get("level_type")),
-            level=values.get("level"), member=values.get("member"), extra=extra,
-        )
-
     @staticmethod
     def _request_times(key):
         """Decode v3 request times for the reki source."""
@@ -163,8 +113,7 @@ class RekiProvider:
         start_time, forecast_time = self._request_times(key)
         self.trace.append(ProviderTrace(
             node_id=request.node_id, dataset_id=self.dataset_id,
-            catalog_origin=self.catalog_origin, provider=(self.source_spec.get("kind", "unknown")
-                if isinstance(self.source_spec, Mapping) else self.source_spec.name),
+            catalog_origin=self.catalog_origin, provider=self.source_spec.get("kind", "unknown"),
             parameter_id=key.parameter_id, external_parameter=external_parameter,
             level_type=(field_identity or key.query.to_dict()).get("level_type"),
             level=(field_identity or key.query.to_dict()).get("level"),
@@ -179,92 +128,7 @@ class RekiProvider:
     def fetch(self, request: BoundFieldRequest):
         """Fetch one compiled request using its concrete time binding."""
         self._ensure_open()
-        if self._query_source is not None:
-            return self._fetch_public(request)
-        capability = self._capability()
-        if capability is not None and capability.direct_result:
-            start_time, forecast_time = self._request_times(request.key)
-            cache_key = self._field_cache_key(request.key.query, start_time, forecast_time,
-                                              request.key.cardinality, request.key.parameter_id)
-            if cache_key in self._field_cache:
-                self._cache_hits += 1
-                value = self._field_cache[cache_key]
-                self._append_trace(request, status="cached", duration=0)
-                return None if value is None else value.copy(deep=False)
-            self._cache_misses += 1
-            value = self._fetch_direct(request)
-            self._field_cache[cache_key] = value
-            return value.copy(deep=False)
-        return self._fetch_selectable(request)
-
-    def _fetch_selectable(self, request: BoundFieldRequest):
-        started = perf_counter()
-        start_time, forecast_time = self._request_times(request.key)
-        cache_key = self._field_cache_key(request.key.query, start_time, forecast_time,
-                                          request.key.cardinality, request.key.parameter_id)
-        if cache_key in self._field_cache:
-            self._cache_hits += 1
-            value = self._field_cache[cache_key]
-            self._append_trace(request, status="cached", duration=0)
-            return None if value is None else value.copy(deep=False)
-        self._cache_misses += 1
-        try:
-            bindings, selected_query = self._selectable_binding(
-                request.key.query, start_time=start_time, forecast_time=forecast_time)
-            selected = reki.from_source(self.source_spec, **bindings).sel(selected_query)
-            cardinality = request.key.cardinality
-            if cardinality == "one":
-                field = selected.one()
-            elif cardinality == "first":
-                field = selected.first()
-            elif cardinality == "all":
-                # Ensemble plans issue one request per member; this marks an
-                # optional member lookup, not a multi-field result.
-                field = selected.one_or_none()
-            else:
-                raise ValueError(f"unsupported field cardinality {cardinality!r}")
-            value = None if field is None else field.to_xarray()
-        except Exception as exc:
-            self._append_trace(request, status="error", duration=perf_counter() - started,
-                               error_code=getattr(exc, "code", type(exc).__name__))
-            raise
-        self._field_cache[cache_key] = value
-        self._append_trace(request, status="missing" if value is None else "ok",
-                           duration=perf_counter() - started)
-        return None if value is None else value.copy(deep=False)
-
-    def _fetch_direct(self, request: BoundFieldRequest):
-        """Bind a high-level request before source construction; never select it."""
-        started = perf_counter()
-        start_time, forecast_time = self._request_times(request.key)
-        try:
-            binder = getattr(reki, "bind_cmadaas_request", None)
-            if binder is None:
-                raise QueryError("unsupported", "/source",
-                                 "CMADaaS plotting requires a public source declaration mapping")
-            bound = binder(
-                self.source_spec, parameter_id=request.key.parameter_id,
-                query=self._legacy_query(request.key.query),
-                start_time=start_time,
-                forecast_time=forecast_time,
-                member=request.key.query.to_dict().get("member"),
-                region=self.region,
-            )
-            result = reki.from_source(self.source_spec, **bound.dynamic_source_kwargs()).to_xarray()
-            if not isinstance(result, xr.DataArray):
-                raise TypeError("CMADaaS model_grid must return one xarray.DataArray")
-            result = reki.normalize_data_array(result, source=self.source_spec)
-            reki.validate_data_array(result, mode="raise")
-            result = result.rename(request.key.parameter_id)
-            result.attrs = dict(result.attrs)
-            result.attrs["cmadaas_parameter"] = bound.parameter
-        except Exception as exc:
-            self._append_trace(request, status="error", duration=perf_counter() - started,
-                               error_code=getattr(exc, "code", type(exc).__name__))
-            raise
-        self._append_trace(request, status="ok", duration=perf_counter() - started,
-                           external_parameter=bound.parameter)
-        return result
+        return self._fetch_public(request)
 
     def _public_selection(self, request):
         public = public_request_from_field_request(
@@ -383,22 +247,4 @@ class RekiProvider:
     def check_many(self, requests):
         """Check metadata when supported; direct-result sources are unknown."""
         self._ensure_open()
-        if self._query_source is not None:
-            return self._check_public_many(tuple(requests))
-        capability = self._capability()
-        if capability is not None and not capability.metadata_only:
-            return ["unknown" for _ in requests]
-        result = []
-        for request in requests:
-            start_time, forecast_time = self._request_times(request.key)
-            kwargs, selected_query = self._selectable_binding(
-                request.key.query, start_time=start_time, forecast_time=forecast_time)
-            try:
-                reader = reki.from_source(self.source_spec, **kwargs)
-                selected = reader.sel(selected_query)
-                # ``one_or_none`` is the strict metadata/cardinality boundary;
-                # it does not call ``to_xarray`` or decode values.
-                result.append("available" if selected.one_or_none() is not None else "missing")
-            except Exception as exc:
-                result.append("provider_error")
-        return result
+        return self._check_public_many(tuple(requests))

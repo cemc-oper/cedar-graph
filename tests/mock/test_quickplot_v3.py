@@ -63,7 +63,7 @@ def test_show_plot_closes_its_provider_after_plot_failure(monkeypatch):
 
     class Provider:
         def __init__(self, source_spec):
-            assert isinstance(source_spec, reki.SourceSpec)
+            assert isinstance(source_spec, dict)
 
         def close(self):
             events.append("provider closed")
@@ -73,7 +73,7 @@ def test_show_plot_closes_its_provider_after_plot_failure(monkeypatch):
                         lambda *args: (_ for _ in ()).throw(RuntimeError("render failed")))
     with pytest.raises(RuntimeError, match="render failed"):
         show_plot("cn.t2m", {"system_name": "CMA-GFS", "start_time": "2026-07-16",
-                             "forecast_time": "24h"}, {"source_spec": reki.SourceSpec("local")})
+                             "forecast_time": "24h"}, {"source_spec": {"kind": "local", "dataset": "cma_gfs_gmf", "root": "/tmp"}})
     assert events == ["provider closed"]
 
 

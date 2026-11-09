@@ -10,9 +10,11 @@ mystnb:
 
 ## 未发布
 
+- 移除 provider 的旧 `SourceSpec` 分支和旧异常依赖；任务关闭后释放数据缓存并保留查询证据。
+
 - 13 个原声明式业务产品与 5 个原 Python 诊断产品均通过统一的
   `cedarkit.plots/v3` workflow 产品接口编译、执行和渲染。
-- `RekiProvider` 使用稳定 parameter ID 与 `FieldQuery` 请求本地/服务数据；
+- `RekiProvider` 使用公开 source 声明、稳定 parameter ID 与公共 `Request` 请求本地/服务数据；
   `MockDataSource` 实现相同的字段 provider 协议，供测试和文档样例使用。
 - 增加集合产品 `cn.ens_t2m`，成员身份、control、MAX 输入及缺失策略显式配置。
 - CEMC 样式与 palette 由 `cedarkit-plots` 单一提供；删除 graph 自有重复样式、

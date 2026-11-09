@@ -91,7 +91,7 @@ CMADaaS client 由调用方关闭。直接 service source 的预检查只做 exp
 验收义务仍保留；当前 reki CLI 尚未接入本公共 Request 入口，因此这部分须在 CLI
 迁移时重开，不能由绘图测试替代。
 
-旧 `SourceSpec` 的可选择读取仍保留在兼容边界；`from_query_catalog` 所依赖的
-CatalogSnapshot/CollectionSession 旧 API 已移除，调用方应迁移到上述 source mapping。
+旧 `SourceSpec`、`from_query_catalog` 和其 CatalogSnapshot/CollectionSession
+API 已移除，调用方须使用上述 source mapping 与公共 Request。
 旧 CMADaaS 高层绑定 API 也已移除，该路径会给出 `unsupported`，请使用当前公共
 CMADaaS source 声明。未支持的条件会明确失败，不回退到默认字段。

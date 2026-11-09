@@ -47,28 +47,12 @@ def test_t2m_product_selects_seasonal_style_and_converts_once():
         panel.close()
 
 
-def test_reki_provider_accepts_v3_bound_request(monkeypatch):
-    field = xr.DataArray(np.full((2, 2), 273.15), dims=("y", "x"), attrs={"units": "K"})
-    calls = []
-
-    class Reader:
-        def sel(self, query):
-            calls.append(query)
-            return self
-
-        def one(self):
-            return self
-
-        def to_xarray(self):
-            return field
-
-    monkeypatch.setattr(reki, "source_capability", lambda source: None)
-    monkeypatch.setattr(reki, "from_source", lambda *args, **kwargs: Reader())
-    product = select_workflow_product("cn.t2m")
-    plan = product.compile(CompileContext(start_time="2024-07-01", forecast_time="24h"))
-    provider = RekiProvider(reki.SourceSpec("local"))
-    result = plan.execute(provider, registry=product.discovery.ops)
-    assert float(result.outputs["temperature"].values[0, 0]) == 0.0
-    assert len(calls) == len(provider.trace) == 1
-    assert provider.trace[0].node_id.startswith("read:")
-    assert provider.trace[0].parameter_id == "cedarkit.t2m"
+def test_reki_provider_accepts_v3_bound_request(tmp_path):
+    from .test_public_query_provider import _fixture
+    source, plan, _, product = _fixture(tmp_path)
+    with RekiProvider(source) as provider:
+        result = plan.execute(provider, registry=product.discovery.ops)
+        np.testing.assert_allclose(result.outputs["temperature"].values, np.arange(280.,292.).reshape(3,4)-273.15)
+        assert len(provider.trace)==1
+        assert provider.trace[0].node_id.startswith("read:")
+        assert provider.trace[0].parameter_id=="cedarkit.t2m"
