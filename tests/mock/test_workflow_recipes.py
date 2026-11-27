@@ -39,9 +39,10 @@ def test_cn_recipe_compiles_executes_and_renders(name, params, reads, styles):
     assert plan.read_count == reads
     assert tuple(plot.style for plot in plots) == styles
     assert all(plot.targets == ("main" if plot.method == "barbs" else "all") for plot in plots)
-    assert all(not bar.plots[0].plot.startswith("wind_") for bar in plan.content.colorbars)
+    colorbars = (*plan.content.colorbars, *plan.content.charts[0].colorbars)
+    assert all(not bar.plots[0].plot.startswith("wind_") for bar in colorbars)
     if name in BAR_LABELS:
-        assert plan.content.colorbars[0].label == BAR_LABELS[name]
+        assert colorbars[0].label == BAR_LABELS[name]
 
     source = MockDataSource(resolution=2)
     result = plan.execute(source, registry=product.discovery.ops)

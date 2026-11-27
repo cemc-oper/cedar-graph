@@ -33,20 +33,24 @@ spec:
         data_crs: plate_carree
       titles:
       - id: heading
+        text: 2 m Temperature (°C)
+      - id: model
+        text: "{params.model}"
+      - id: init
         text: |-
-          2m Temperature (°C)
-          {params.model} | Init {context.start_time_label} | Valid {context.valid_time_label} | +{context.forecast_hour}h
-    colorbars:
-    - id: temperature
-      plots:
-      - chart: main
-        plot: temperature
-      label: °C
+          Init {context.start_time_label}
+          {context.start_time_cst_label}
+      - id: lead
+        text: "{context.forecast_lead_label}"
+      - id: valid
+        text: |-
+          Valid {context.valid_time_label}
+          {context.valid_time_cst_label}
+      colorbars:
+      - id: temperature
+        plots:
+        - chart: main
+          plot: temperature
+        label: °C
   display:
     template: east_asia
-    charts:
-      main:
-        decorations:
-          titles:
-            heading:
-              fontsize: 9

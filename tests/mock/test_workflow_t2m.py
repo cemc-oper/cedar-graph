@@ -23,10 +23,15 @@ def test_t2m_product_selects_seasonal_style_and_converts_once():
     assert winter.content.charts[0].plots[0].style == "cemc.t2m:cn_winter"
     assert len(summer.content.charts[0].plots) == 1
     assert summer.content.charts[0].plots[0].targets == "all"
-    assert summer.content.colorbars[0].label == "°C"
-    assert summer.content.charts[0].titles[0].text == (
-        "2m Temperature (°C)\n"
-        "CMA-GFS | Init 2024070100 UTC | Valid 2024070200 UTC | +024h")
+    assert not summer.content.colorbars
+    assert summer.content.charts[0].colorbars[0].label == "°C"
+    assert {title.id: title.text for title in summer.content.charts[0].titles} == {
+        "heading": "2 m Temperature (°C)",
+        "model": "CMA-GFS",
+        "init": "Init 2024070100 UTC\n2024070108 CST",
+        "lead": "+24 h",
+        "valid": "Valid 2024070200 UTC\n2024070208 CST",
+    }
 
     provider = MockDataSource(resolution=2)
     result = summer.execute(provider, registry=product.discovery.ops)
