@@ -14,7 +14,7 @@ import pandas as pd
 import xarray as xr
 
 from cedarkit.plots import Panel
-from cedarkit.plots.config import BasemapSpec, Cell, Rect, SubplotSpec, LayoutSpec
+from cedarkit.plots.config import BasemapSpec, Cell, Rect, LayoutSpec
 from cedarkit.plots.style.registry import get_default_registry
 from cedarkit.plots.templates import ens_cn
 from cedarkit.plots.workflow.discovery import discover_workflow
@@ -146,9 +146,7 @@ class PreparedEnsemble:
                                       max_id="max" if self.max_field is not None else None,
                                       require_control=self.realized_control_id is not None,
                                       require_max=self.max_field is not None,
-                                      basemap=basemap, empty_slots=empty_slots),
-                      layout=LayoutSpec(figsize=(column_count * 3.6 + .8,
-                          ((len(self.fields) + int(self.max_field is not None) + column_count - 1) // column_count) * 2.8 + .8)))
+                                      basemap=basemap, empty_slots=empty_slots))
         try:
             origin, valid = pd.Timestamp(self.start_time), pd.Timestamp(self.valid_time)
             panel.set_title(f"{self.request.model} 2 m temperature (°C) | Init {origin:%Y%m%d%H} UTC | "
@@ -165,16 +163,16 @@ class PreparedEnsemble:
                 title = "CTL" if role == "control" else chart_id
                 if role == "max":
                     summary = self.summary()
-                    title = (f"MAX selected n={len(self.max_input_ids)}/{summary['max_requested_input_count']}\n"
-                             f"CTL {'included' if self.request.include_control_in_max else 'excluded'}; "
-                             f"valid/cell={summary['valid_input_count_min']}-{summary['valid_input_count_max']}")
+                    title = (f"MAX n={len(self.max_input_ids)}/{summary['max_requested_input_count']}\n"
+                             f"CTL {'included' if self.request.include_control_in_max else 'excluded'} · "
+                             f"valid/cell {summary['valid_input_count_min']}–{summary['valid_input_count_max']}")
                 chart.set_title(title)
                 style = styles.get_style(f"cemc.t2m:{self.style_variant}", data=field)
                 layers.append(chart.contourf(field, style=style, id="temperature",
                                              data_crs=ccrs.PlateCarree(), subplots="main"))
             panel.colorbar(tuple(layers), id="ens_cn_colorbar", label="°C", subplots="main")
-            for chart in panel.charts.values():
-                chart.configure(subplots={"main": SubplotSpec(aspect="equal")})
+            rows = panel.effective_config.layout.rows
+            panel.configure(layout=LayoutSpec(figsize=(column_count * 3.6 + .8, rows * 2.5 + .8)))
             if render:
                 panel.render()
             return panel

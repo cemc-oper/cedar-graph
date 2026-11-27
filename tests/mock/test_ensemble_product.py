@@ -48,6 +48,11 @@ def test_member_count_max_identity_and_shared_colorbar(member_count):
         assert all(panel.charts[member].role == "member" for member in member_ids)
         assert "ens_cn_colorbar" in panel.effective_config.decorations.colorbars
         assert len(panel.fig.axes) == len(panel.charts) + 1
+        assert max(chart.main.ax.bbox.x1 for chart in panel.charts.values()) < panel.fig.axes[-1].bbox.x0
+        boundaries = [chart.layers["temperature"].results["main"].mappable.norm.boundaries
+                      for chart in panel.charts.values()]
+        for levels in boundaries[1:]:
+            np.testing.assert_array_equal(levels, boundaries[0])
     finally:
         panel.close()
 
