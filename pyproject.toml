@@ -34,8 +34,8 @@ dependencies = [
     "reki>=2026.11.0",
     "cedarkit-query>=0.2.1,<0.3",
     "cedarkit-comp>=2026.7.0",
-    # The committed cn_mps style starts with this plots candidate.
-    "cedarkit-plots>=2026.9.1.dev42",
+    # The v3 forecast layout and context ship in this release.
+    "cedarkit-plots>=2026.11.0",
 ]
 
 [project.urls]
